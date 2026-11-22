@@ -134,4 +134,4 @@ config/layout.json   default layout
 
 Quota method adapted from [PhoneBox](https://github.com/ersinkoc/phonebox) (MIT). Weather/air by Open-Meteo, FX by Frankfurter, crypto by CoinGecko, gold by Truncgil Finans.
 
-[MIT](LICENSE)
+[MIT](LICENSE) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md)
