@@ -1,0 +1,77 @@
+# Docker host (Ubuntu / CasaOS / any Linux) icin. Calistirma: `docker compose up -d --build`
+# Once ".env.example" dosyasini ".env" olarak kopyala ve doldur.
+# Port: HomeDeck 8787 kullanir (CasaOS arayuzu 80'de calisir, cakismaz).
+services:
+  docker-proxy:
+    # docker.sock'u dogrudan hub'a vermek yerine salt okunur bir API proxy'si
+    image: tecnativa/docker-socket-proxy:latest
+    restart: unless-stopped
+    environment:
+      CONTAINERS: 1      # sadece konteyner listesi
+      POST: 0            # yazma islemleri kapali
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "127.0.0.1:2375:2375"
+
+  homedeck:
+    build: .
+    restart: unless-stopped
+    network_mode: host          # /proc/net/dev gercek ag arayuzlerini gorsun diye
+    depends_on:
+      - docker-proxy
+    environment:
+      PORT: "8787"
+      DOCKER_HOST: "tcp://127.0.0.1:2375"
+      DISK_PATH: "/host"        # asagidaki salt okunur mount (host kok dizini)
+      WEATHER_CITY: "${WEATHER_CITY:-Istanbul}"
+      WEATHER_LAT: "${WEATHER_LAT:-41.01}"
+      WEATHER_LON: "${WEATHER_LON:-28.97}"
+      HA_URL: "${HA_URL:-}"        # Home Assistant adresi (takvim/cihazlar icin, opsiyonel)
+      HA_TOKEN: "${HA_TOKEN:-}"    # HA uzun omurlu erisim jetonu: sadece .env'de dursun, git'e yazma
+      # Agent kimlikleri: makine-id:token. Sunucunun kendi agent'i zorunlu; digerleri EXTRA_AGENT_TOKENS ile (".env.example")
+      AGENT_TOKENS: "server:${SERVER_TOKEN:?.env dosyasinda SERVER_TOKEN yok}${EXTRA_AGENT_TOKENS:-}"
+      # Ag korumasi, iki ayri yon:
+      # 1) VERI CIKISI (arayuz, API, canli akis, duzen, PIN): SADECE ekran cihazinin sabit IP'si + localhost.
+      #    Baska bir cihazdan (ornek bilgisayar) erismek icin .env'de VIEWER_EXTRA=",CIHAZ_IP/32"
+      VIEWER_CIDRS: "${VIEWER_IP:?.env dosyasinda VIEWER_IP yok (ekran cihazinin sabit IP'si)}/32,127.0.0.0/8,::1/128${VIEWER_EXTRA:-}"
+      # 2) VERI GIRISI (agent'lar hub'a veri gonderir): ozel ag; zaten makine basina token ile korunur.
+      INGEST_CIDRS: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,127.0.0.0/8,::1/128"
+      # BIND_HOST: ""    # istersen sadece bir LAN arayuzune bagla (ornek: sunucunun LAN IP'si)
+      # Gitea paneli (opsiyonel, salt okuma): uc degiskenin hepsi dolu olmali
+      GITEA_URL: "${GITEA_URL:-}"
+      GITEA_REPOS: "${GITEA_REPOS:-}"
+      GITEA_TOKEN: "${GITEA_TOKEN:-}"
+      # Modem sayaci (opsiyonel): UPnP/IGD modem adresi
+      MODEM_UPNP: "${MODEM_UPNP:-}"
+      # Webhook (/api/push) icin ek token (opsiyonel; agent token'lari da gecerlidir)
+      PUSH_TOKEN: "${PUSH_TOKEN:-}"
+      # Ekran duzenleme modu PIN'i (widget'a uzun bas). Bos birakirsan duzenleme kapali olur.
+      EDIT_PIN: "${EDIT_PIN:-}"
+      # ACCESS_TOKEN: "uzun-rastgele-bir-deger"   # LAN disina acacaksan ZORUNLU (ornek: http://HUB:8787/?token=...)
+    volumes:
+      - /:/host:ro
+      - homedeck-data:/app/data   # duzenlenen ekran yerlesimi + yedekler (container silinse de kalir)
+      - ./agent:/app/agent:ro     # Windows agent guncelleyicisi dosyalari buradan ceker (git pull yeter)
+
+  agent-server:
+    # Sunucunun kendi disk/CPU/RAM/ag bilgisini hub'a yollar (tum diskler dahil)
+    image: node:22-alpine
+    restart: unless-stopped
+    network_mode: host
+    pid: host
+    depends_on:
+      - homedeck
+    command: ["node", "/app/agent.js"]
+    environment:
+      HUB_URL: "http://127.0.0.1:8787"
+      AGENT_HOST: "server"
+      AGENT_LABEL: "Server"
+      AGENT_TOKEN: "${SERVER_TOKEN}"
+      HOST_ROOT: "/host"
+    volumes:
+      - ./agent:/app:ro
+      - /:/host:ro,rslave       # rslave: host'a sonradan takilan diskler de gorunur
+
+volumes:
+  homedeck-data:

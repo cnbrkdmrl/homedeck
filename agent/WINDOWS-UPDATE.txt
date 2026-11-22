@@ -1,0 +1,37 @@
+HomeDeck agent - Windows: tiklayarak guncelleme
+===============================================
+Token yazmaya GEREK YOK: guncelleyici hub adresini ve token'i C:\HomeDeckAgent\agent.config.json'dan kendi okur.
+
+
+BIR KEZ YAPILACAK KURULUM (normal PowerShell, bu blogu yapistir)
+-----------------------------------------------------------------
+$c = Get-Content C:\HomeDeckAgent\agent.config.json -Raw | ConvertFrom-Json
+$h = @{ Authorization = "Bearer $($c.token)" }
+foreach ($n in "update-windows.ps1","GUNCELLE.bat") { Invoke-WebRequest "$($c.hub)/api/agent/file/$n" -Headers $h -OutFile "C:\HomeDeckAgent\$n" -UseBasicParsing }
+Copy-Item C:\HomeDeckAgent\GUNCELLE.bat "$env:USERPROFILE\Desktop\HomeDeck Guncelle.bat"
+
+Bu, masaustune "HomeDeck Guncelle.bat" koyar.
+
+
+HER GUNCELLEMEDE
+----------------
+Masaustundeki "HomeDeck Guncelle.bat" dosyasina cift tikla. Pencerede sunlar gorunur:
+  - "Zaten guncel."                  -> yapilacak bir sey yok
+  - "TAMAM: agent yeni surumle..."   -> guncellendi, hub'a baglandi
+  - "UYARI ... ESKI dosyalar geri yukleniyor" -> yeni surum acilmadi, eskisi geri geldi (sorun bildir)
+
+Masaustundeki kopya yalnizca bir kisayoldur gibi calisir: asil dosya C:\HomeDeckAgent\GUNCELLE.bat, kendini de guncelleyebilir.
+
+
+GUNCELLEME NASIL HAZIRLANIR (gelistirme/sunucu tarafi)
+------------------------------------------------
+Degisiklik -> commit/push -> sunucuda:  cd ~/homedeck && git pull
+(hub'i yeniden kurmak gerekmez; agent dosyalari sunucudaki klasorden okunur)
+Sonra Windows makinede GUNCELLE.bat'a cift tikla.
+
+
+SORUN GIDERME
+-------------
+"Hub'a baglanilamadi" / zaman asimi : hub acik mi? Test-NetConnection HUB_IP -Port 8787
+401                                 : agent.config.json'daki token degismis olabilir; install-windows.ps1'i yeniden calistir
+Gunluk                              : Get-Content C:\HomeDeckAgent\agent.log -Tail 15

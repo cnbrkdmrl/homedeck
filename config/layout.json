@@ -1,0 +1,316 @@
+{
+  "idleReturnSec": 90,
+  "pages": [
+    {
+      "id": "home",
+      "title": "Ana",
+      "widgets": [
+        {
+          "type": "clock",
+          "col": 1,
+          "row": 1,
+          "w": 4,
+          "h": 3,
+          "opts": {
+            "style": "animated"
+          }
+        },
+        {
+          "type": "weather",
+          "col": 5,
+          "row": 1,
+          "w": 4,
+          "h": 3
+        },
+        {
+          "type": "stack",
+          "col": 9,
+          "row": 1,
+          "w": 4,
+          "h": 3,
+          "opts": {
+            "a": "nextup",
+            "b": "notify",
+            "c": "pushvals",
+            "d": "fx",
+            "every": "8"
+          }
+        },
+        {
+          "type": "quota",
+          "col": 1,
+          "row": 4,
+          "w": 8,
+          "h": 3,
+          "opts": {
+            "provider": "all"
+          }
+        },
+        {
+          "type": "modem",
+          "col": 9,
+          "row": 4,
+          "w": 4,
+          "h": 3
+        }
+      ]
+    },
+    {
+      "id": "machines",
+      "title": "Makineler",
+      "widgets": [
+        {
+          "type": "machines",
+          "col": 1,
+          "row": 1,
+          "w": 12,
+          "h": 6,
+          "opts": {
+            "order": [
+              "laptop",
+              "desktop",
+              "server"
+            ]
+          },
+          "nopad": true
+        }
+      ]
+    },
+    {
+      "id": "quotas",
+      "title": "AI Kotaları",
+      "widgets": [
+        {
+          "type": "quota",
+          "col": 1,
+          "row": 1,
+          "w": 12,
+          "h": 6,
+          "opts": {
+            "provider": "all",
+            "model": "all"
+          }
+        }
+      ]
+    },
+    {
+      "id": "piyasa",
+      "title": "Piyasa",
+      "widgets": [
+        {
+          "type": "fx",
+          "col": 1,
+          "row": 1,
+          "w": 4,
+          "h": 3
+        },
+        {
+          "type": "crypto",
+          "col": 5,
+          "row": 1,
+          "w": 4,
+          "h": 3
+        },
+        {
+          "type": "gold",
+          "col": 9,
+          "row": 1,
+          "w": 4,
+          "h": 3
+        },
+        {
+          "type": "hn",
+          "col": 1,
+          "row": 4,
+          "w": 8,
+          "h": 3
+        },
+        {
+          "type": "worldclock",
+          "col": 9,
+          "row": 4,
+          "w": 4,
+          "h": 3
+        }
+      ]
+    },
+    {
+      "id": "sessions",
+      "title": "AI İşleri",
+      "widgets": [
+        {
+          "type": "sessions",
+          "col": 1,
+          "row": 1,
+          "w": 6,
+          "h": 6
+        },
+        {
+          "type": "gitea",
+          "col": 7,
+          "row": 1,
+          "w": 6,
+          "h": 3
+        },
+        {
+          "type": "notify",
+          "col": 7,
+          "row": 4,
+          "w": 6,
+          "h": 3
+        }
+      ]
+    },
+    {
+      "id": "ev",
+      "title": "Ev",
+      "widgets": [
+        {
+          "type": "ha_air",
+          "col": 1,
+          "row": 1,
+          "w": 6,
+          "h": 3
+        },
+        {
+          "type": "ha_vac",
+          "col": 7,
+          "row": 1,
+          "w": 6,
+          "h": 3
+        },
+        {
+          "type": "ha_clim",
+          "col": 1,
+          "row": 4,
+          "w": 6,
+          "h": 3
+        },
+        {
+          "type": "airq",
+          "col": 7,
+          "row": 4,
+          "w": 6,
+          "h": 3
+        }
+      ]
+    },
+    {
+      "id": "calendar",
+      "title": "Takvim",
+      "widgets": [
+        {
+          "type": "calendar",
+          "col": 1,
+          "row": 1,
+          "w": 6,
+          "h": 6
+        },
+        {
+          "type": "nextup",
+          "col": 7,
+          "row": 1,
+          "w": 6,
+          "h": 3
+        },
+        {
+          "type": "forecast",
+          "col": 7,
+          "row": 4,
+          "w": 6,
+          "h": 3,
+          "opts": {
+            "mode": "hourly"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sky",
+      "title": "Hava",
+      "widgets": [
+        {
+          "type": "forecast",
+          "col": 1,
+          "row": 1,
+          "w": 12,
+          "h": 3
+        },
+        {
+          "type": "weather",
+          "col": 1,
+          "row": 4,
+          "w": 6,
+          "h": 3
+        },
+        {
+          "type": "sky",
+          "col": 7,
+          "row": 4,
+          "w": 6,
+          "h": 3
+        }
+      ]
+    },
+    {
+      "id": "server",
+      "title": "Sunucu",
+      "widgets": [
+        {
+          "type": "ring",
+          "col": 1,
+          "row": 1,
+          "w": 3,
+          "h": 3,
+          "opts": {
+            "metric": "cpu"
+          }
+        },
+        {
+          "type": "ring",
+          "col": 4,
+          "row": 1,
+          "w": 3,
+          "h": 3,
+          "opts": {
+            "metric": "ram"
+          }
+        },
+        {
+          "type": "ring",
+          "col": 7,
+          "row": 1,
+          "w": 3,
+          "h": 3,
+          "opts": {
+            "metric": "disk"
+          }
+        },
+        {
+          "type": "ring",
+          "col": 10,
+          "row": 1,
+          "w": 3,
+          "h": 3,
+          "opts": {
+            "metric": "temp"
+          }
+        },
+        {
+          "type": "cpugraph",
+          "col": 1,
+          "row": 4,
+          "w": 6,
+          "h": 3
+        },
+        {
+          "type": "docker",
+          "col": 7,
+          "row": 4,
+          "w": 6,
+          "h": 3
+        }
+      ]
+    }
+  ]
+}
