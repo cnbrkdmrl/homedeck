@@ -23,6 +23,7 @@ Captured in demo mode (sample data, no real accounts). The default layout has ni
 ## Features
 
 - **Machines**: a tiny agent (single file, Node 18.15+; macOS / Linux / Windows) reports CPU, RAM, disks, network, temperature, optional GPU and battery.
+- **Health summary**: one glance at load, disk, memory, temperature, containers and machines (warns before things break).
 - **Docker** container list through a read-only socket proxy, **system** metrics, **modem** traffic counter (UPnP/IGD).
 - **Weather, sun & moon, air quality** (Open-Meteo, no key), **calendar** and **smart-home devices** via Home Assistant (read-only).
 - **Markets**: FX, crypto, gold (Turkish sources + PAXG), Hacker News. All keyless public APIs; set `MARKET=off` to disable.

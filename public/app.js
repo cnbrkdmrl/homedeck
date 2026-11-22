@@ -71,7 +71,7 @@
 
   // ---------- widget katalogu (galeri, hazir boyutlar, ayarlar) ----------
   // sizes: [etiket, genislik, yukseklik] - ilk boyut en kucuk; galeri varsayilan olarak 'def' indeksini dener
-  var CH = [['none', '—'], ['weather', 'Hava durumu'], ['calendar', 'Takvim'], ['nextup', 'Sıradaki etkinlik'], ['worldclock', 'Dünya saatleri'], ['wordclock', 'Kelime saati'], ['clock', 'Saat'], ['fx', 'Döviz'], ['crypto', 'Kripto'], ['gold', 'Altın'], ['hn', 'Hacker News'], ['quota', 'AI kotaları'], ['sky', 'Güneş ve Ay'], ['airq', 'Hava kalitesi'], ['ha_air', 'Hava temizleyici'], ['ha_vac', 'Robot süpürge'], ['ha_clim', 'Kombi'], ['modem', 'Modem'], ['network', 'İnternet'], ['gitea', 'Gitea'], ['notify', 'Bildirimler'], ['pushvals', 'Gönderilen değerler'], ['sessions', 'AI işleri']];
+  var CH = [['none', '—'], ['weather', 'Hava durumu'], ['calendar', 'Takvim'], ['nextup', 'Sıradaki etkinlik'], ['worldclock', 'Dünya saatleri'], ['wordclock', 'Kelime saati'], ['clock', 'Saat'], ['fx', 'Döviz'], ['crypto', 'Kripto'], ['gold', 'Altın'], ['hn', 'Hacker News'], ['quota', 'AI kotaları'], ['health', 'Sağlık özeti'], ['sky', 'Güneş ve Ay'], ['airq', 'Hava kalitesi'], ['ha_air', 'Hava temizleyici'], ['ha_vac', 'Robot süpürge'], ['ha_clim', 'Kombi'], ['modem', 'Modem'], ['network', 'İnternet'], ['gitea', 'Gitea'], ['notify', 'Bildirimler'], ['pushvals', 'Gönderilen değerler'], ['sessions', 'AI işleri']];
   var CATALOG = {
     clock:    { name: 'Saat', cat: 'Zaman', icon: '🕐', def: 1, sizes: [['S', 3, 2], ['M', 4, 3], ['L', 6, 3], ['XL', 6, 6]],
                 opts: [{ key: 'style', label: 'Stil', choices: [['digital', 'Dijital'], ['analog', 'Analog'], ['animated', 'Animasyonlu']] }], defaults: { style: 'digital' } },
@@ -110,6 +110,7 @@
                 defaults: { a: 'nextup', b: 'weather', c: 'fx', d: 'none', every: '8' } },
     gitea:    { name: 'Gitea (commit + CI)', cat: 'Araçlar', icon: '🌿', def: 1, sizes: [['M', 4, 3], ['L', 6, 3], ['XL', 8, 6]] },
     pushvals: { name: 'Gönderilen değerler', cat: 'Araçlar', icon: '📮', def: 0, sizes: [['S', 3, 2], ['M', 6, 3], ['L', 8, 3]] },
+    health:   { name: 'Sağlık özeti', cat: 'Sistem', icon: '🩺', def: 0, sizes: [['M', 4, 3], ['L', 6, 3], ['XL', 6, 6]] },
     notify:   { name: 'Bildirimler', cat: 'Araçlar', icon: '🔔', def: 0, sizes: [['S', 4, 3], ['L', 6, 3], ['XL', 8, 6]] }
   };
   var CAT_ORDER = ['Zaman', 'Ev', 'Sistem', 'Ağ', 'AI', 'Piyasa', 'Haber', 'Araçlar'];
@@ -693,6 +694,26 @@
     }
   };
 
+  // ---- Saglik ozeti: yuk, disk, bellek, sicaklik, konteyner, makine ----
+  widgets.health = {
+    deps: ['system', 'docker', 'machines'],
+    render: function (el, opts, def) {
+      var inp = { system: S.system && S.system.data, docker: S.docker && S.docker.data, machines: S.machines && S.machines.data };
+      if (!inp.system && !inp.docker && !inp.machines) { el.innerHTML = '<div class="title">Sağlık özeti</div><div class="dim">veri yok</div>'; return; }
+      var r = HealthMath.evaluate(inp), n = 0, i;
+      for (i = 0; i < r.checks.length; i++) if (r.checks[i].level) n++;
+      var cls = ['ok', 'warn', 'bad'][r.level];
+      var head = r.level === 0 ? 'Her şey yolunda' : r.level === 1 ? n + ' uyarı' : n + ' sorun';
+      var list = r.checks.slice().sort(function (a, b) { return b.level - a.level; });
+      var max = def && def.h >= 5 ? 8 : 5, rows = '';
+      for (i = 0; i < list.length && i < max; i++) {
+        var c = list[i];
+        rows += '<div class="hl ' + ['ok', 'warn', 'bad'][c.level] + '"><i></i><span class="hl-n">' + esc(c.label) + '</span><span class="hl-t">' + esc(c.text) + '</span></div>';
+      }
+      el.innerHTML = '<div class="title">Sağlık özeti</div><div class="hl-h ' + cls + '"><i></i>' + head + '</div><div class="hls">' + rows + '</div>';
+    }
+  };
+
   widgets.notify = {
     deps: ['push'], tick: true,
     render: function (el, opts, def) {
@@ -853,7 +874,7 @@
   };
 
   // ---- Akilli yigin (Smart Stack): secili widget'lar sirayla doner; dokununca bir sonrakine gecer ----
-  var STACK_TYPES = ['weather', 'calendar', 'nextup', 'worldclock', 'wordclock', 'clock', 'fx', 'crypto', 'gold', 'hn', 'quota', 'sky', 'airq', 'ha_air', 'ha_vac', 'ha_clim', 'modem', 'network', 'gitea', 'notify', 'pushvals', 'sessions'];
+  var STACK_TYPES = ['weather', 'calendar', 'nextup', 'worldclock', 'wordclock', 'clock', 'fx', 'crypto', 'gold', 'hn', 'quota', 'sky', 'airq', 'ha_air', 'ha_vac', 'ha_clim', 'modem', 'network', 'gitea', 'notify', 'pushvals', 'sessions', 'health'];
   widgets.stack = {
     deps: (function () { var o = {}; STACK_TYPES.forEach(function (t) { ((widgets[t] && widgets[t].deps) || []).forEach(function (d) { o[d] = 1; }); }); return Object.keys(o); })(),
     tick: true,

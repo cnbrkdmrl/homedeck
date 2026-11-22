@@ -407,3 +407,16 @@ body.editing .page { touch-action: pan-x; }
 
 .mk-s.gd { flex-basis: 8vh; color: #fbbf24; }
 .mk-n { font-size: .45rem; margin-top: .4vh; }
+
+/* ===== saglik ozeti ===== */
+.hl-h { display: flex; align-items: center; gap: 1vh; font-size: 1.15rem; font-weight: 600; margin: .6vh 0 .4vh; }
+.hl-h i, .hl i { width: 1.2vh; height: 1.2vh; border-radius: 50%; flex: none; background: var(--good); box-shadow: 0 0 1vh var(--good); }
+.hl-h.ok { color: var(--good); } .hl-h.warn { color: var(--warn); } .hl-h.bad { color: var(--bad); }
+.hl-h.warn i, .hl.warn i { background: var(--warn); box-shadow: 0 0 1vh var(--warn); }
+.hl-h.bad i, .hl.bad i { background: var(--bad); box-shadow: 0 0 1vh var(--bad); }
+.hls { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: space-around; gap: .4vh; }
+.hl { display: flex; align-items: center; gap: .9vh; font-size: .6rem; }
+.hl i { width: .9vh; height: .9vh; box-shadow: none !important; }
+.hl-n { flex: 0 0 auto; min-width: 11vh; }
+.hl-t { flex: 1; min-width: 0; color: var(--dim); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hl.warn .hl-t { color: var(--warn); } .hl.bad .hl-t { color: var(--bad); }

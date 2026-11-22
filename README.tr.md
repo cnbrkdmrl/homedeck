@@ -23,6 +23,7 @@ Demo modunda alındı (örnek veri, gerçek hesap yok). Varsayılan düzende dok
 ## Özellikler
 
 - **Makineler:** her makinede çalışan küçük agent CPU, RAM, diskler, ağ, sıcaklık, (varsa) GPU ve pil bilgisini gönderir (macOS / Linux / Windows).
+- **Sağlık özeti:** yük, disk, bellek, sıcaklık, konteyner ve makine durumu tek bakışta.
 - **Docker** konteyner listesi (salt okunur socket proxy), **sistem** metrikleri, **modem** trafik sayacı (UPnP/IGD).
 - **Hava, güneş/ay, hava kalitesi** (Open-Meteo, anahtarsız); **takvim** ve **akıllı ev cihazları** Home Assistant üzerinden (salt okunur).
 - **Piyasa:** döviz, kripto, altın (Türk kaynakları + PAXG), Hacker News. Hepsi anahtarsız herkese açık API; kapatmak için `MARKET=off`.

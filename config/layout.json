@@ -297,17 +297,24 @@
           }
         },
         {
-          "type": "cpugraph",
+          "type": "health",
           "col": 1,
           "row": 4,
-          "w": 6,
+          "w": 4,
+          "h": 3
+        },
+        {
+          "type": "cpugraph",
+          "col": 5,
+          "row": 4,
+          "w": 4,
           "h": 3
         },
         {
           "type": "docker",
-          "col": 7,
+          "col": 9,
           "row": 4,
-          "w": 6,
+          "w": 4,
           "h": 3
         }
       ]
