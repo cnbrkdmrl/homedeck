@@ -2,7 +2,23 @@
 
 Boştaki bir tableti ya da eski bir telefonu sürekli açık bir ev sunucusu ekranına çeviren, sıfır bağımlılıklı (Node 20+) panel hub'ı. SSE ile canlı veri, eski WebView'larda çalışan sade JS arayüz, sürükle-bırak yerleşim editörü, Docker ile kurulum.
 
-> Arayüz Türkçedir. İngilizce doküman: [README.md](README.md).
+[English](README.md) | **Türkçe**
+
+> Arayüz Türkçedir.
+
+## Ekran görüntüleri
+
+Demo modunda alındı (örnek veri, gerçek hesap yok). Varsayılan düzende dokuz sayfa var; beşi gösteriliyor.
+
+<p>
+<img src="docs/screenshots/home.png" alt="Home page: clock, weather, FX, AI quotas, modem" width="49%"> <img src="docs/screenshots/markets.png" alt="Markets page: FX, crypto, gold, Hacker News, world clocks" width="49%">
+</p>
+<p>
+<img src="docs/screenshots/ai-webhook.png" alt="AI sessions, webhook values and notifications" width="49%"> <img src="docs/screenshots/smart-home.png" alt="Smart-home devices via Home Assistant" width="49%">
+</p>
+<p>
+<img src="docs/screenshots/calendar.png" alt="Calendar, next event and hourly forecast" width="49%">
+</p>
 
 ## Özellikler
 

@@ -2,7 +2,23 @@
 
 A zero-dependency (Node 20+) dashboard hub that turns a spare tablet or old phone into an always-on home-server display. Live data over SSE, vanilla-JS client that works on old WebViews, drag-and-drop layout editor, runs in Docker.
 
-> The UI language is Turkish. Docs also in [Türkçe](README.tr.md).
+**English** | [Türkçe](README.tr.md)
+
+> The UI language is Turkish.
+
+## Screenshots
+
+Captured in demo mode (sample data, no real accounts). The default layout has nine pages; five are shown.
+
+<p>
+<img src="docs/screenshots/home.png" alt="Home page: clock, weather, FX, AI quotas, modem" width="49%"> <img src="docs/screenshots/markets.png" alt="Markets page: FX, crypto, gold, Hacker News, world clocks" width="49%">
+</p>
+<p>
+<img src="docs/screenshots/ai-webhook.png" alt="AI sessions, webhook values and notifications" width="49%"> <img src="docs/screenshots/smart-home.png" alt="Smart-home devices via Home Assistant" width="49%">
+</p>
+<p>
+<img src="docs/screenshots/calendar.png" alt="Calendar, next event and hourly forecast" width="49%">
+</p>
 
 ## Features
 
@@ -21,7 +37,7 @@ A zero-dependency (Node 20+) dashboard hub that turns a spare tablet or old phon
 npm start            # http://localhost:8787
 ```
 
-On macOS/Windows, system metrics and Docker are simulated (marked "demo"). On Linux you get real data. Demo switches: `DEMO_SESSIONS=1`, `DEMO_QUOTAS=1`, `DEMO_CALENDAR=1`, `DEMO_HA=1`, `DEMO_MODEM=1`.
+On macOS/Windows, system metrics and Docker are simulated (marked "demo"). On Linux you get real data. To reproduce the screenshots use demo switches: `DEMO_SESSIONS=1`, `DEMO_QUOTAS=1`, `DEMO_CALENDAR=1`, `DEMO_HA=1`, `DEMO_MODEM=1`.
 
 ## Deploy with Docker
 
