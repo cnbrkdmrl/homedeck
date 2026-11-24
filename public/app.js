@@ -110,6 +110,8 @@
                 defaults: { a: 'nextup', b: 'weather', c: 'fx', d: 'none', every: '8' } },
     gitea:    { name: 'Gitea (commit + CI)', cat: 'Araçlar', icon: '🌿', def: 1, sizes: [['M', 4, 3], ['L', 6, 3], ['XL', 8, 6]] },
     pushvals: { name: 'Gönderilen değerler', cat: 'Araçlar', icon: '📮', def: 0, sizes: [['S', 3, 2], ['M', 6, 3], ['L', 8, 3]] },
+    services: { name: 'Servis kontrolü', cat: 'Ağ', icon: '📡', def: 0, sizes: [['M', 4, 3], ['L', 6, 3], ['XL', 8, 6]] },
+    nowplaying: { name: 'Çalıyor (müzik)', cat: 'Araçlar', icon: '🎵', def: 0, sizes: [['M', 4, 3], ['L', 6, 3], ['XL', 12, 6]] },
     health:   { name: 'Sağlık özeti', cat: 'Sistem', icon: '🩺', def: 0, sizes: [['M', 4, 3], ['L', 6, 3], ['XL', 6, 6]] },
     notify:   { name: 'Bildirimler', cat: 'Araçlar', icon: '🔔', def: 0, sizes: [['S', 4, 3], ['L', 6, 3], ['XL', 8, 6]] }
   };
@@ -696,9 +698,9 @@
 
   // ---- Saglik ozeti: yuk, disk, bellek, sicaklik, konteyner, makine ----
   widgets.health = {
-    deps: ['system', 'docker', 'machines'],
+    deps: ['system', 'docker', 'machines', 'services'],
     render: function (el, opts, def) {
-      var inp = { system: S.system && S.system.data, docker: S.docker && S.docker.data, machines: S.machines && S.machines.data };
+      var inp = { system: S.system && S.system.data, docker: S.docker && S.docker.data, machines: S.machines && S.machines.data, services: S.services && S.services.data };
       if (!inp.system && !inp.docker && !inp.machines) { el.innerHTML = '<div class="title">Sağlık özeti</div><div class="dim">veri yok</div>'; return; }
       var r = HealthMath.evaluate(inp), n = 0, i;
       for (i = 0; i < r.checks.length; i++) if (r.checks[i].level) n++;
@@ -711,6 +713,78 @@
         rows += '<div class="hl ' + ['ok', 'warn', 'bad'][c.level] + '"><i></i><span class="hl-n">' + esc(c.label) + '</span><span class="hl-t">' + esc(c.text) + '</span></div>';
       }
       el.innerHTML = '<div class="title">Sağlık özeti</div><div class="hl-h ' + cls + '"><i></i>' + head + '</div><div class="hls">' + rows + '</div>';
+    }
+  };
+
+  // ---- Servis kontrolu: ayakta mi + yanit suresi grafigi ----
+  function spark(hist) {
+    var n = hist.length, i, v, max = 200, d = '', pen = false, miss = '';
+    if (n < 2) return '';
+    for (i = 0; i < n; i++) if (hist[i] !== null && hist[i] > max) max = hist[i];
+    for (i = 0; i < n; i++) {
+      var x = (i / (n - 1) * 100).toFixed(1);
+      v = hist[i];
+      if (v === null) { pen = false; miss += '<line x1="' + x + '" y1="2" x2="' + x + '" y2="22" class="sv-miss"/>'; continue; }
+      d += (pen ? 'L' : 'M') + x + ' ' + (22 - Math.min(1, v / max) * 19).toFixed(1) + ' ';
+      pen = true;
+    }
+    return '<svg class="sv-sp" viewBox="0 0 100 24" preserveAspectRatio="none"><path d="' + d + '" class="sv-line"/>' + miss + '</svg>';
+  }
+  widgets.services = {
+    deps: ['services'],
+    render: function (el, opts, def) {
+      var d = S.services && S.services.data;
+      if (!d) { el.innerHTML = '<div class="title">Servisler</div><div class="hint">Servis kontrolü kapalı. Sunucuda <b>SERVICES</b> ayarla: <code>Ad=http://host:port</code></div>'; return; }
+      var list = d.services, up = 0, i, rows = '';
+      for (i = 0; i < list.length; i++) if (list[i].status !== 'down') up++;
+      var cls = up === list.length ? 'ok' : 'bad';
+      var max = def && def.h >= 5 ? 8 : 4;
+      for (i = 0; i < list.length && i < max; i++) {
+        var s = list[i], txt = s.status === 'down' ? esc(s.err || 'kapalı') : s.ms + '<small> ms</small>';
+        rows += '<div class="sv ' + s.status + '"><i></i><span class="sv-n">' + esc(s.name) + '</span>' + spark(s.hist) + '<span class="sv-t">' + txt + '</span></div>';
+      }
+      el.innerHTML = '<div class="title">Servisler · <span class="sv-h ' + cls + '">' + up + '/' + list.length + ' ayakta</span></div><div class="svs">' + rows + '</div>';
+    }
+  };
+
+  // ---- Calan sarki (Muzik / Spotify, macOS agent) ----
+  function fmtT(s) { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + pad(s % 60); }
+  widgets.nowplaying = {
+    deps: ['media'], tick: true,
+    render: function (el, opts, def) {
+      var m = S.media && S.media.data, p = m && m.players && m.players[0];
+      if (!p) {
+        if (el._npKey !== 'none') {
+          el._npKey = 'none';
+          el.innerHTML = '<div class="title">Çalıyor</div><div class="np-empty"><div class="np-ic">♪</div>Çalan bir şey yok<small>Mac’te Müzik ya da Spotify’dan bir şarkı başlat</small></div>';
+        }
+        return;
+      }
+      var key = S.media.ts + '|' + def.w + 'x' + def.h;
+      if (el._npKey !== key) {
+        el._npKey = key; el._npT0 = Date.now(); el._npPos = p.position || 0;
+        var big = def.h >= 5, playing = p.state === 'playing';
+        var art = p.artwork ? '<img class="np-art" src="' + esc(p.artwork) + '" alt="">' : '<div class="np-art np-noart">♪</div>';
+        el.innerHTML = '<div class="title">' + (p.app === 'spotify' ? 'Spotify' : 'Apple Music') + ' · ' + esc(p.label) + '</div>' +
+          '<div class="np' + (big ? ' xl' : '') + '">' + art + '<div class="np-b">' +
+          '<div class="np-t">' + esc(p.title) + '</div>' +
+          '<div class="np-a">' + esc(p.artist) + '</div>' + (p.album ? '<div class="np-al">' + esc(p.album) + '</div>' : '') +
+          (p.duration ? '<div class="np-bar"><div class="np-fill"></div></div><div class="np-tm"></div>' : '') +
+          '<div class="np-ctl"><button class="np-btn" data-a="previous" aria-label="Önceki">⏮</button>' +
+          '<button class="np-btn np-pp" data-a="playpause" aria-label="' + (playing ? 'Duraklat' : 'Oynat') + '">' + (playing ? '⏸' : '▶') + '</button>' +
+          '<button class="np-btn" data-a="next" aria-label="Sonraki">⏭</button></div></div></div>';
+        var btns = el.querySelectorAll('.np-btn'), host = p.host;
+        for (var i = 0; i < btns.length; i++) btns[i].addEventListener('click', function (e) {
+          var b = e.currentTarget; b.classList.add('sent'); setTimeout(function () { b.classList.remove('sent'); }, 400);
+          fetch(api('/api/media/command'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ host: host, action: b.getAttribute('data-a') }) }).catch(function () {});
+        });
+      }
+      var bar = el.querySelector('.np-fill'), tm = el.querySelector('.np-tm');
+      if (bar && p.duration) {
+        var pos = clamp(el._npPos + (p.state === 'playing' ? (Date.now() - el._npT0) / 1000 : 0), 0, p.duration);
+        bar.style.width = (pos / p.duration * 100).toFixed(1) + '%';
+        tm.textContent = fmtT(pos) + ' / ' + fmtT(p.duration);
+      }
     }
   };
 
@@ -959,7 +1033,7 @@
   function makeWidget(def) {
     var impl = widgets[def.type];
     var el = document.createElement('div');
-    el.className = 'w' + (def.nopad ? ' nopad' : '') + (editing ? ' edit' : '') + (editing && selectedId === def._id ? ' sel' : '');
+    el.className = 'w h' + def.h + ' w' + def.w + (def.nopad ? ' nopad' : '') + (editing ? ' edit' : '') + (editing && selectedId === def._id ? ' sel' : '');
     el.style.gridColumn = def.col + ' / span ' + def.w;
     el.style.gridRow = def.row + ' / span ' + def.h;
     var body = document.createElement('div');

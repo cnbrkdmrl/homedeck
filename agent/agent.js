@@ -28,6 +28,7 @@ const INTERVAL = Number(process.env.AGENT_INTERVAL || cfg.intervalSec || 3) * 10
 const HOST_ROOT = (process.env.HOST_ROOT || cfg.hostRoot || '').replace(/\/$/, ''); // konteynerde: /host
 const DISKS = cfg.disks || (process.env.AGENT_DISKS ? process.env.AGENT_DISKS.split(',') : null); // elle disk listesi (opsiyonel)
 const P = process.platform;
+let media = null; // macOS calan sarki (media-mac.mjs); opt-in: agent.config.json'da "media": true ya da AGENT_MEDIA=1
 let extra = null; // ek metrikler (GPU, pil, surecler, USB): extra-metrics.mjs yuklenirse dolar
 
 function run(cmd, args, timeout) {
@@ -290,6 +291,7 @@ async function tick() {
       uptime: os.uptime(),
       temp: temperature(),
       extra: extra ? extra.snapshot() : null,
+      media: media ? await media.read().catch(() => null) : null,
     };
     const res = await fetch(HUB + '/api/ingest', {
       method: 'POST',
@@ -298,6 +300,14 @@ async function tick() {
       signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) throw new Error('hub http ' + res.status);
+    if (res.status === 200 && media) {
+      // Hub cevabinda ekrandan gelen medya komutlari olabilir: uygula, sonra durumu hemen yenile
+      const j = await res.json().catch(() => null);
+      const cmds = j && Array.isArray(j.commands) ? j.commands.slice(0, 4) : [];
+      let did = false;
+      for (const c of cmds) did = (await media.control(c)) || did;
+      if (did) setTimeout(tick, 600);
+    }
     if (lastOk !== true) console.log('[agent] hub baglantisi tamam (' + HOST + ' -> ' + HUB + ')');
     lastOk = true;
   } catch (err) {
@@ -340,6 +350,14 @@ if (process.env.AGENT_EXTRA !== '0' && cfg.extraMetrics !== false) {
     extra = em.createExtraMetrics({ platform: P, run: run, log: (m) => console.warn(m) });
     extra.start();
   } catch (e) { console.warn('[agent] extra-metrics.mjs yuklenemedi, ek metrikler kapali: ' + e.message); }
+}
+// Calan sarki (opsiyonel, yalniz macOS): Muzik ve Spotify uygulamalari. Ilk calismada macOS Otomasyon izni sorar.
+if (process.env.AGENT_MEDIA === '1' || cfg.media === true) {
+  try {
+    const mm = await import('./media-mac.mjs');
+    media = mm.createMedia({ platform: P, log: (m) => console.warn(m) });
+    if (!media) console.warn('[agent] medya yalniz macOS destekli; kapali.');
+  } catch (e) { console.warn('[agent] media-mac.mjs yuklenemedi, medya kapali: ' + e.message); }
 }
 (async function loop() {
   await tick();

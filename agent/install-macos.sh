@@ -21,6 +21,7 @@ cp "$SRC/agent.js" "$DIR/agent.js"
 cp "$SRC/quota-readers.mjs" "$DIR/quota-readers.mjs"
 cp "$SRC/claude-usage.mjs" "$DIR/claude-usage.mjs"
 cp "$SRC/extra-metrics.mjs" "$DIR/extra-metrics.mjs"
+cp "$SRC/media-mac.mjs" "$DIR/media-mac.mjs"
 cat > "$DIR/agent.config.json" <<EOF
 { "hub": "$HUB", "token": "$TOKEN", "host": "$HOST_ID", "label": "$LABEL" }
 EOF

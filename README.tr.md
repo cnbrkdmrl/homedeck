@@ -8,7 +8,7 @@ Boştaki bir tableti ya da eski bir telefonu sürekli açık bir ev sunucusu ekr
 
 ## Ekran görüntüleri
 
-Demo modunda alındı (örnek veri, gerçek hesap yok). Varsayılan düzende dokuz sayfa var; beşi gösteriliyor.
+Demo modunda alındı (örnek veri, gerçek hesap yok). Varsayılan düzende on sayfa var; altısı gösteriliyor.
 
 <p>
 <img src="docs/screenshots/home.png" alt="Home page: clock, weather, FX, AI quotas, modem" width="49%"> <img src="docs/screenshots/markets.png" alt="Markets page: FX, crypto, gold, Hacker News, world clocks" width="49%">
@@ -17,12 +17,14 @@ Demo modunda alındı (örnek veri, gerçek hesap yok). Varsayılan düzende dok
 <img src="docs/screenshots/ai-webhook.png" alt="AI sessions, webhook values and notifications" width="49%"> <img src="docs/screenshots/smart-home.png" alt="Smart-home devices via Home Assistant" width="49%">
 </p>
 <p>
-<img src="docs/screenshots/calendar.png" alt="Calendar, next event and hourly forecast" width="49%">
+<img src="docs/screenshots/calendar.png" alt="Calendar, next event and hourly forecast" width="49%"> <img src="docs/screenshots/server.png" alt="Server page: health summary, service checks and Docker" width="49%">
 </p>
 
 ## Özellikler
 
 - **Makineler:** her makinede çalışan küçük agent CPU, RAM, diskler, ağ, sıcaklık, (varsa) GPU ve pil bilgisini gönderir (macOS / Linux / Windows).
+- **Servis kontrolü:** listelediğin adreslerin / TCP portlarının ayakta olup olmadığı ve yanıt süresi (`SERVICES`), gecikme grafiğiyle.
+- **Çalan şarkı:** macOS'ta Apple Music ve Spotify için şarkı bilgisi ve ⏮ ⏯ ⏭ düğmeleri (agent'ta opt-in).
 - **Sağlık özeti:** yük, disk, bellek, sıcaklık, konteyner ve makine durumu tek bakışta.
 - **Docker** konteyner listesi (salt okunur socket proxy), **sistem** metrikleri, **modem** trafik sayacı (UPnP/IGD).
 - **Hava, güneş/ay, hava kalitesi** (Open-Meteo, anahtarsız); **takvim** ve **akıllı ev cihazları** Home Assistant üzerinden (salt okunur).
@@ -51,7 +53,7 @@ Ekran cihazında `http://<sunucu-ip>:8787` aç. Compose hub'ı, salt okunur `doc
 
 ## Ayarlar
 
-Tüm ayarlar ortam değişkenidir: [`.env.example`](.env.example) ve [`docker-compose.yml`](docker-compose.yml). Başlıcalar: `SERVER_TOKEN` (zorunlu), `VIEWER_IP` (ekran cihazının sabit IP'si; arayüzü yalnız o görür), `EDIT_PIN` (boşsa düzenleme kapalı), `EXTRA_AGENT_TOKENS` (`,laptop:token,desktop:token`), `VIEWER_EXTRA`, `WEATHER_CITY/LAT/LON`, `HA_URL/HA_TOKEN`, `GITEA_URL/GITEA_REPOS/GITEA_TOKEN`, `MODEM_UPNP`, `PUSH_TOKEN`, `ACCESS_TOKEN` (LAN dışına açacaksan zorunlu).
+Tüm ayarlar ortam değişkenidir: [`.env.example`](.env.example) ve [`docker-compose.yml`](docker-compose.yml). Başlıcalar: `SERVER_TOKEN` (zorunlu), `VIEWER_IP` (ekran cihazının sabit IP'si; arayüzü yalnız o görür), `EDIT_PIN` (boşsa düzenleme kapalı), `EXTRA_AGENT_TOKENS` (`,laptop:token,desktop:token`), `VIEWER_EXTRA`, `WEATHER_CITY/LAT/LON`, `HA_URL/HA_TOKEN`, `GITEA_URL/GITEA_REPOS/GITEA_TOKEN`, `SERVICES` (`Ad=http://host:port,Ad2=tcp://host:22`), `MODEM_UPNP`, `PUSH_TOKEN`, `ACCESS_TOKEN` (LAN dışına açacaksan zorunlu).
 
 ## Makine ekleme
 
@@ -78,6 +80,10 @@ Değerler `id`'ye göre tutulur; bildirimler `ttl` dakika sonra düşer (varsay�
 ## Claude Code kancaları ve kota
 
 `node hooks/install-hooks.mjs --dry-run` ile önce ne yapacağını gör, sonra `node hooks/install-hooks.mjs` ile kur. Makinede agent kurulu olmalı. Claude kotası için OAuth yöntemi **resmi olmayan, belgelenmemiş** bir uç nokta kullanır; varsayılan **kapalı**. Açmadan önce `agent/claude-usage.mjs` içindeki notları oku.
+
+## Çalan şarkı (macOS: Apple Music / Spotify)
+
+"Müzik" sayfası şarkıyı gösterir ve ⏮ ⏯ ⏭ düğmeleriyle uygulamayı kontrol eder. macOS agent'ı Müzik ve Spotify masaüstünü AppleScript ile okur; hesap ya da anahtar gerekmez. Açmak için `~/.homedeck-agent/agent.config.json` dosyasına `"media": true` ekleyip agent'ı yeniden başlat; macOS ilk seferde Otomasyon izni sorar. Agent kapalı bir müzik uygulamasını açmaz. Telefon uygulamaları, YouTube Music ve tarayıcı oynatıcıları desteklenmez.
 
 ## Yerleşim editörü
 

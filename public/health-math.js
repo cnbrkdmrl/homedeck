@@ -83,6 +83,18 @@ var HealthMath = (function () {
       if (tot) checks.push({ key: 'machines', label: 'Makineler', level: lost.length ? 2 : 0, text: on + '/' + tot + ' çevrimiçi' + (lost.length ? ' · ' + lost.slice(0, 2).join(', ') + ' yok' : '') });
     }
 
+    // Servisler: ayakta mi, yavas mi (SERVICES ayarliysa)
+    var sv = inp.services && inp.services.services;
+    if (sv && sv.length) {
+      var dn = [], sl = [], up = 0;
+      for (i = 0; i < sv.length; i++) {
+        if (sv[i].status === 'down') dn.push(sv[i].name); else { up++; if (sv[i].status === 'slow') sl.push(sv[i].name); }
+      }
+      var names = dn.length ? dn : sl;
+      checks.push({ key: 'services', label: 'Servisler', level: dn.length ? 2 : sl.length ? 1 : 0,
+        text: up + '/' + sv.length + ' ayakta' + (names.length ? ' · ' + names.slice(0, 2).join(', ') + (dn.length ? ' yok' : ' yavaş') : '') });
+    }
+
     var level = 0;
     for (i = 0; i < checks.length; i++) if (checks[i].level > level) level = checks[i].level;
     return { level: level, checks: checks };

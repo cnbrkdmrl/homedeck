@@ -10,6 +10,7 @@ import { createNetGuard } from './netguard.js';
 import { createSessionStore } from './sessions.js';
 import { createQuotaStore } from './quotas.js';
 import { createPushStore } from './push.js';
+import { createMediaStore, isAction } from './media.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(ROOT, 'public');
@@ -126,6 +127,30 @@ setInterval(() => {
   if (changed) publishMachines();
 }, 5000);
 
+// ---------- Calan sarki (agent -> hub) ve ekrandan komut (POST /api/media/command) ----------
+const mediaStore = createMediaStore();
+function publishMedia() {
+  state.media = { data: { players: mediaStore.list() }, ts: Date.now(), stale: false, simulated: false, error: null };
+  broadcast('update', { name: 'media', entry: state.media });
+}
+setInterval(() => { if (mediaStore.sweep()) publishMedia(); }, 5000);
+let cmdWindow = { t: 0, n: 0 };
+function handleMediaCommand(req, res) {
+  const now = Date.now();
+  if (now - cmdWindow.t > 1000) cmdWindow = { t: now, n: 0 };
+  if (++cmdWindow.n > 8) { res.writeHead(429).end('cok hizli'); return; }
+  let chunks = '';
+  req.on('data', (c) => { chunks += c; if (chunks.length > 1024) req.destroy(); });
+  req.on('end', () => {
+    let b;
+    try { b = JSON.parse(chunks); } catch (e) { res.writeHead(400).end('bad json'); return; }
+    if (!b || !isAction(b.action)) { res.writeHead(422).end('gecersiz komut'); return; }
+    const host = typeof b.host === 'string' && b.host ? b.host : mediaStore.firstHost();
+    if (!host || !mediaStore.command(host, b.action)) { res.writeHead(404).end('calan bir sey yok'); return; }
+    res.writeHead(202, { 'Content-Type': 'application/json' }).end('{"ok":true}');
+  });
+}
+
 function handleIngest(req, res) {
   const header = req.headers['authorization'] || '';
   const tok = header.startsWith('Bearer ') ? header.slice(7) : '';
@@ -142,7 +167,10 @@ function handleIngest(req, res) {
     else hostId = AGENT_TOKENS.get(tok); // kimlik token'dan gelir, govdeden degil
     if (!hostId) { res.writeHead(401).end('Unauthorized'); return; }
     ingest(hostId, body);
-    res.writeHead(204).end();
+    if (mediaStore.update(hostId, body.label || hostId, body.media)) publishMedia();
+    const cmds = mediaStore.takeCommands(hostId);
+    if (cmds.length) res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ commands: cmds }));
+    else res.writeHead(204).end();
   });
 }
 
@@ -257,6 +285,7 @@ publishMachines();
 if (process.env.DEMO_SESSIONS !== '1') publishSessions(); // demo kapaliysa gercek (bos) liste ile basla
 if (process.env.DEMO_QUOTAS !== '1') publishQuotas();     // kota: ayni sekilde
 publishPush();
+publishMedia();
 
 for (const c of collectors) {
   const loop = async () => {
@@ -298,7 +327,7 @@ function serveStatic(req, res, url) {
 // ---------- Agent guncelleme dosyalari (Windows'taki GUNCELLE.bat bunlari ceker) ----------
 // Yalniz AGENT_TOKENS'taki token'la ve ingest agindan (ingestGuard) erisilir; yalniz asagidaki beyaz listedeki dosyalar sunulur.
 const AGENT_DIR = process.env.AGENT_DIR || path.join(ROOT, 'agent');
-const AGENT_FILES = ['agent.js', 'quota-readers.mjs', 'claude-usage.mjs', 'extra-metrics.mjs', 'update-windows.ps1', 'GUNCELLE.bat'];
+const AGENT_FILES = ['agent.js', 'quota-readers.mjs', 'claude-usage.mjs', 'extra-metrics.mjs', 'media-mac.mjs', 'update-windows.ps1', 'GUNCELLE.bat'];
 function handleAgentFiles(req, res, url) {
   const header = req.headers['authorization'] || '';
   const tok = header.startsWith('Bearer ') ? header.slice(7) : '';
@@ -362,6 +391,10 @@ const server = http.createServer((req, res) => {
     if (url.pathname === '/api/health') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ ok: true, uptime: process.uptime(), clients: clients.size }));
+      return;
+    }
+    if (url.pathname === '/api/media/command' && req.method === 'POST') {
+      handleMediaCommand(req, res);
       return;
     }
     if (url.pathname === '/api/layout' || url.pathname === '/api/edit/verify') {

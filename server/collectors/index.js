@@ -10,6 +10,7 @@ import modem from './modem.js';
 import { mockModem } from './mock-modem.js';
 import gitea from './gitea.js';
 import { fx, crypto, hn, gold } from './market.js';
+import services, { hasServices } from './services.js';
 import { mockQuotas, mockSessions } from './mock-ai.js';
 
 // Yeni veri kaynagi eklemek icin: collectors/ altina { name, interval, run() } dosyasi yaz, buraya ekle.
@@ -29,5 +30,7 @@ else if (process.env.MODEM_UPNP && process.env.MODEM_UPNP !== 'off') collectors.
 if (process.env.GITEA_URL && process.env.GITEA_TOKEN && process.env.GITEA_REPOS) collectors.push(gitea);
 // Doviz, kripto, Hacker News (anahtarsiz herkese acik API'ler). Kapatmak icin MARKET=off
 if (process.env.MARKET !== 'off') collectors.push(fx, crypto, hn, gold);
+// Servis kontrolu (ayakta mi + yanit suresi): SERVICES="Ad=http://host:port,Ad2=tcp://host:port" ayarliysa
+if (hasServices) collectors.push(services);
 if (process.env.DEMO_QUOTAS === '1') collectors.push(mockQuotas);
 if (process.env.DEMO_SESSIONS === '1') collectors.push(mockSessions);

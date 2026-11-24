@@ -8,7 +8,7 @@ A zero-dependency (Node 20+) dashboard hub that turns a spare tablet or old phon
 
 ## Screenshots
 
-Captured in demo mode (sample data, no real accounts). The default layout has nine pages; five are shown.
+Captured in demo mode (sample data, no real accounts). The default layout has ten pages; six are shown.
 
 <p>
 <img src="docs/screenshots/home.png" alt="Home page: clock, weather, FX, AI quotas, modem" width="49%"> <img src="docs/screenshots/markets.png" alt="Markets page: FX, crypto, gold, Hacker News, world clocks" width="49%">
@@ -17,12 +17,14 @@ Captured in demo mode (sample data, no real accounts). The default layout has ni
 <img src="docs/screenshots/ai-webhook.png" alt="AI sessions, webhook values and notifications" width="49%"> <img src="docs/screenshots/smart-home.png" alt="Smart-home devices via Home Assistant" width="49%">
 </p>
 <p>
-<img src="docs/screenshots/calendar.png" alt="Calendar, next event and hourly forecast" width="49%">
+<img src="docs/screenshots/calendar.png" alt="Calendar, next event and hourly forecast" width="49%"> <img src="docs/screenshots/server.png" alt="Server page: health summary, service checks and Docker" width="49%">
 </p>
 
 ## Features
 
 - **Machines**: a tiny agent (single file, Node 18.15+; macOS / Linux / Windows) reports CPU, RAM, disks, network, temperature, optional GPU and battery.
+- **Service checks**: up/down and response time for any URLs or TCP ports you list (`SERVICES`), with a latency sparkline.
+- **Now playing**: track info and ⏮ ⏯ ⏭ controls for Apple Music and Spotify on macOS (opt-in agent feature).
 - **Health summary**: one glance at load, disk, memory, temperature, containers and machines (warns before things break).
 - **Docker** container list through a read-only socket proxy, **system** metrics, **modem** traffic counter (UPnP/IGD).
 - **Weather, sun & moon, air quality** (Open-Meteo, no key), **calendar** and **smart-home devices** via Home Assistant (read-only).
@@ -63,6 +65,7 @@ Everything is environment variables; see [`.env.example`](.env.example) and [`do
 | `WEATHER_CITY/LAT/LON` | location (default Istanbul) |
 | `HA_URL`, `HA_TOKEN` | Home Assistant: calendar + devices (read-only) |
 | `GITEA_URL`, `GITEA_REPOS`, `GITEA_TOKEN` | Gitea panel (all three required) |
+| `SERVICES` | service checks: `Name=http://host:port,Other=tcp://host:22` (max 8) |
 | `MODEM_UPNP` | modem UPnP base URL (feature off when unset) |
 | `PUSH_TOKEN` | extra bearer token for the webhook |
 | `ACCESS_TOKEN` | required if you ever expose the hub beyond your LAN |
@@ -107,6 +110,16 @@ The machine must already run the agent. Hooks never block Claude Code (exit code
 ### Claude quota (opt-in, unofficial)
 
 An optional agent mode reads Claude Code's OAuth token and queries an **undocumented** Anthropic usage endpoint (method adapted from PhoneBox, MIT). It may break at any time and may fall in a gray area of the provider's terms; it is **off by default**. See `node agent/claude-usage.mjs --probe` and the comments in `agent/claude-usage.mjs` before enabling it with `"claudeUsage": "oauth"` in `agent.config.json`.
+
+## Now playing (Apple Music / Spotify on macOS)
+
+The "Müzik" page (or `＋ Widget` → Now playing) shows the current track and ⏮ ⏯ ⏭ buttons that control the app. The macOS agent reads and controls the Music app and Spotify desktop with AppleScript; no account or API key needed.
+
+- **Enable (opt-in):** add `"media": true` to `~/.homedeck-agent/agent.config.json` and restart the agent (`launchctl kickstart -k gui/$(id -u)/com.homedeck.agent`). `AGENT_MEDIA=1` also works.
+- **Permission:** macOS asks once to let the agent control Music/Spotify (System Settings → Privacy & Security → Automation).
+- The agent never launches a music app; it only talks to one that is already running.
+- Button presses go screen → hub (`POST /api/media/command`, viewer addresses only) → agent (next request, ≤ ~3 s).
+- Album art appears for Spotify only. Phone apps, YouTube Music and browser players are not supported.
 
 ## Layout editor
 
