@@ -5,6 +5,7 @@
 //   node install-hooks.mjs --dry-run       ne yapacagini goster, HICBIR SEY yazma
 //   node install-hooks.mjs                 kur (once yedek alir)
 //   node install-hooks.mjs --uninstall     kaldir (yalnizca HomeDeck satirlarini; digerlerine dokunmaz)
+//   node install-hooks.mjs --approvals     ek olarak izin onaylarini iPad'den verme kancasini kur (OPT-IN, README'deki Onaylar bolumune bak)
 // Secenekler: --settings <dosya> (varsayilan ~/.claude/settings.json), --dir <agent klasoru>
 //
 // Guvenlik: dosya bozuksa hicbir sey degistirmez; baska kancalara/ayarlara dokunmaz; yazmadan once yedekler;
@@ -19,6 +20,7 @@ const flag = (n) => args.includes(n);
 const opt = (n, d) => { const i = args.indexOf(n); return i >= 0 && args[i + 1] ? args[i + 1] : d; };
 
 const dryRun = flag('--dry-run');
+const withApprovals = flag('--approvals');
 const uninstall = flag('--uninstall');
 const settingsFile = opt('--settings', path.join(os.homedir(), '.claude', 'settings.json'));
 const agentDir = opt('--dir', process.platform === 'win32' ? 'C:\\HomeDeckAgent' : path.join(os.homedir(), '.homedeck-agent'));
@@ -26,6 +28,10 @@ const hookSrc = path.join(path.dirname(fileURLToPath(import.meta.url)), 'homedec
 const hookDest = path.join(agentDir, 'homedeck-hook.mjs');
 const MARK = 'homedeck-hook.mjs';
 const command = 'node "' + hookDest + '"';
+const approveSrc = path.join(path.dirname(fileURLToPath(import.meta.url)), 'homedeck-approve.mjs');
+const approveDest = path.join(agentDir, 'homedeck-approve.mjs');
+const MARK2 = 'homedeck-approve.mjs';
+const approveCommand = 'node "' + approveDest + '"';
 
 // Olay -> grup. Arac olaylari icin matcher gerekir.
 const EVENTS = {
@@ -62,7 +68,7 @@ for (const ev of Object.keys(hooks)) {
   hooks[ev] = hooks[ev]
     .map((g) => {
       if (!g || !Array.isArray(g.hooks)) return g;
-      const keep = g.hooks.filter((h) => !(h && typeof h.command === 'string' && h.command.includes(MARK)));
+      const keep = g.hooks.filter((h) => !(h && typeof h.command === 'string' && (h.command.includes(MARK) || h.command.includes(MARK2))));
       removed += g.hooks.length - keep.length;
       return keep.length ? { ...g, hooks: keep } : null;
     })
@@ -78,6 +84,12 @@ if (!uninstall) {
     hooks[ev].push({ ...extra, hooks: [{ type: 'command', command }] });
     added++;
   }
+  if (withApprovals) {
+    // timeout (sn): kanca en cok 85 sn bekler; Claude Code'un varsayilan zaman asimi bundan kisa olabilir, o yuzden acikca 100
+    hooks.PermissionRequest = hooks.PermissionRequest || [];
+    hooks.PermissionRequest.push({ matcher: '*', hooks: [{ type: 'command', command: approveCommand, timeout: 100 }] });
+    added++;
+  }
 }
 if (Object.keys(hooks).length) settings.hooks = hooks;
 else delete settings.hooks;
@@ -87,8 +99,9 @@ const out = JSON.stringify(settings, null, 2) + '\n';
 // 4) Ozet
 log((dryRun ? '[DRY-RUN] ' : '') + (uninstall ? 'KALDIRMA' : 'KURULUM') + ' -> ' + settingsFile);
 log('  kanca betigi : ' + hookDest);
-log('  onceki HomeDeck satiri temizlenen: ' + removed + (uninstall ? '' : ', eklenen: ' + added + ' olay (' + Object.keys(EVENTS).join(', ') + ')'));
+log('  onceki HomeDeck satiri temizlenen: ' + removed + (uninstall ? '' : ', eklenen: ' + added + ' olay (' + Object.keys(EVENTS).concat(withApprovals ? ['PermissionRequest'] : []).join(', ') + ')'));
 const cfg = path.join(agentDir, 'agent.config.json');
+if (!uninstall && !withApprovals) log('  not: izin onaylari kapali (acmak icin --approvals ile yeniden calistir).');
 if (!uninstall && !fs.existsSync(cfg)) log('  UYARI: ' + cfg + ' yok. Kanca hub adresini/token\'i oradan okur: once agent\'i kur (install-macos.sh / install-windows.ps1).');
 
 if (dryRun) {
@@ -107,9 +120,12 @@ try {
   }
   if (uninstall) {
     fs.rmSync(hookDest, { force: true });
+    fs.rmSync(approveDest, { force: true });
   } else {
     fs.mkdirSync(agentDir, { recursive: true });
     fs.copyFileSync(hookSrc, hookDest);
+    if (withApprovals) fs.copyFileSync(approveSrc, approveDest);
+    else fs.rmSync(approveDest, { force: true });
   }
   const tmp = settingsFile + '.homedeck-tmp';
   fs.writeFileSync(tmp, out);

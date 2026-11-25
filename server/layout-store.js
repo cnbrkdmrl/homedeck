@@ -1,17 +1,13 @@
 // Yazilabilir ekran duzeni: profil bazli, dogrulamali, yedekli, PIN korumali.
 import fs from 'node:fs';
 import path from 'node:path';
-import crypto from 'node:crypto';
 
 const COLS = 12;
 const ROWS = 6;
 const MAX_BACKUPS = 10;
 
-export function createLayoutStore({ defaultFile, dataDir, pin, broadcast }) {
-  const EDIT_PIN = pin ? String(pin) : '';
+export function createLayoutStore({ defaultFile, dataDir, pinGuard, broadcast }) {
   const backupDir = path.join(dataDir, 'backups');
-  let fails = 0;
-  let lockedUntil = 0;
 
   const profileOf = (url) => {
     const p = (url.searchParams.get('profile') || 'default').toLowerCase();
@@ -20,28 +16,11 @@ export function createLayoutStore({ defaultFile, dataDir, pin, broadcast }) {
   const fileOf = (p) => path.join(dataDir, 'layout.' + p + '.json');
 
   function checkPin(req, res) {
-    if (!EDIT_PIN) {
-      res.writeHead(403).end('duzenleme kapali: EDIT_PIN ayarla');
-      return false;
-    }
-    if (Date.now() < lockedUntil) {
-      res.writeHead(429).end('cok fazla deneme');
-      return false;
-    }
-    const given = Buffer.from(String(req.headers['x-edit-pin'] || ''));
-    const want = Buffer.from(EDIT_PIN);
-    const ok = given.length === want.length && crypto.timingSafeEqual(given, want);
-    if (!ok) {
-      fails++;
-      if (fails >= 5) {
-        lockedUntil = Date.now() + 60000;
-        fails = 0;
-      }
-      res.writeHead(403).end('yanlis pin');
-      return false;
-    }
-    fails = 0;
-    return true;
+    const r = pinGuard.check(req.headers['x-edit-pin']);
+    if (r === 'ok') return true;
+    if (r === 'locked') res.writeHead(429).end('cok fazla deneme');
+    else res.writeHead(403).end(r === 'disabled' ? 'duzenleme kapali: EDIT_PIN ayarla' : 'yanlis pin');
+    return false;
   }
 
   const int = (v) => (Number.isFinite(Number(v)) ? Math.trunc(Number(v)) : NaN);

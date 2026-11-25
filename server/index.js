@@ -6,6 +6,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { collectors } from './collectors/index.js';
 import { createLayoutStore } from './layout-store.js';
+import { createPinGuard } from './pin-guard.js';
+import { createApprovalStore } from './approvals.js';
 import { createNetGuard } from './netguard.js';
 import { createSessionStore } from './sessions.js';
 import { createQuotaStore } from './quotas.js';
@@ -27,7 +29,7 @@ function parseDim(spec, level) {
   const lv = Number(level);
   return { from: hm(m[1], m[2]), to: hm(m[3], m[4]), level: Math.min(1, Math.max(0.1, Number.isFinite(lv) && level !== '' && level != null ? lv : 0.35)) };
 }
-const uiConfig = { dim: parseDim(process.env.DIM, process.env.DIM_LEVEL) };
+const uiConfig = { dim: parseDim(process.env.DIM, process.env.DIM_LEVEL), pagebar: process.env.PAGEBAR === 'dots' ? 'dots' : 'names' };
 const TOKEN = process.env.ACCESS_TOKEN || ''; // bos ise auth yok (sadece LAN/Tailscale'de kullan)
 
 const MIME = {
@@ -64,10 +66,11 @@ const BIND_HOST = process.env.BIND_HOST || '0.0.0.0'; // istersen sadece LAN IP'
 
 // ---------- Ekran duzeni (duzenleme modu bunu yazar) ----------
 // Duzenleme PIN'i: EDIT_PIN (varsayilan yok: ayarlanmazsa duzenleme kapali). Sadece LAN/Tailscale'de kullan; PIN zayif bir korumadir.
+const pinGuard = createPinGuard(process.env.EDIT_PIN || '');
 const layoutStore = createLayoutStore({
   defaultFile: LAYOUT,
   dataDir: process.env.DATA_DIR || path.join(ROOT, 'data'),
-  pin: process.env.EDIT_PIN || '',
+  pinGuard,
   broadcast,
 });
 
@@ -212,6 +215,79 @@ function handleSession(req, res) {
   });
 }
 
+// ---------- Claude izin onayları (PermissionRequest kancası -> hub -> iPad) ----------
+// Etkin olması için: PIN tanımlı (EDIT_PIN) ve agent token'ları tanımlı (AGENT_TOKENS) olmalı; APPROVALS=off kapatır.
+// "İzin ver" PIN ister, "Reddet" istemez (reddetmek güvenli yön). Belirsiz her durumda kanca karar yazmaz,
+// Claude Code normal onay penceresine döner.
+const approvalStore = createApprovalStore();
+const approvalsEnabled = () => pinGuard.enabled && !OPEN_INGEST && process.env.APPROVALS !== 'off';
+function publishApprovals() {
+  state.approvals = { data: { enabled: approvalsEnabled(), pending: approvalStore.list() }, ts: Date.now(), stale: false, simulated: false, error: null };
+  broadcast('update', { name: 'approvals', entry: state.approvals });
+}
+setInterval(() => { if (approvalStore.sweep()) publishApprovals(); }, 2000);
+
+function readJsonBody(req, res, limit, cb) {
+  let chunks = '';
+  req.on('data', (c) => { chunks += c; if (chunks.length > limit) req.destroy(); });
+  req.on('end', () => {
+    let body;
+    try { body = JSON.parse(chunks || '{}'); } catch (e) { res.writeHead(400).end('bad json'); return; }
+    cb(body);
+  });
+}
+const bearerHost = (req) => {
+  const h = req.headers['authorization'] || '';
+  return h.startsWith('Bearer ') ? AGENT_TOKENS.get(h.slice(7)) : undefined;
+};
+
+// Kanca tarafı (agent token'ı): POST /api/approval, GET|DELETE /api/approval/<id>
+function handleApprovalHook(req, res, url) {
+  const hostId = bearerHost(req);
+  if (!hostId) { res.writeHead(401).end('Unauthorized'); return; }
+  if (!approvalsEnabled()) { res.writeHead(403).end('approvals disabled'); return; }
+  const m = /^\/api\/approval\/([0-9a-f]{24})$/.exec(url.pathname);
+  if (url.pathname === '/api/approval' && req.method === 'POST') {
+    readJsonBody(req, res, 8192, (b) => {
+      const id = approvalStore.create(String(hostId), b);
+      if (!id) { res.writeHead(429).end('busy'); return; }
+      publishApprovals();
+      res.writeHead(201, { 'Content-Type': 'application/json' }).end(JSON.stringify({ id }));
+    });
+    return;
+  }
+  if (m && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ status: approvalStore.status(m[1], String(hostId)) }));
+    return;
+  }
+  if (m && req.method === 'DELETE') {
+    if (approvalStore.cancel(m[1], String(hostId))) publishApprovals();
+    res.writeHead(204).end();
+    return;
+  }
+  res.writeHead(404).end('not found');
+}
+
+// Ekran tarafı: POST /api/approval/<id>/decide { decision: 'allow' | 'deny' } ("allow" için x-edit-pin gerekir)
+function handleApprovalDecide(req, res, id) {
+  if (req.method !== 'POST') { res.writeHead(405).end(); return; }
+  if (!approvalsEnabled()) { res.writeHead(403).end('approvals disabled'); return; }
+  readJsonBody(req, res, 1024, (b) => {
+    const decision = b && b.decision;
+    if (decision !== 'allow' && decision !== 'deny') { res.writeHead(400).end('bad decision'); return; }
+    if (decision === 'allow') {
+      const r = pinGuard.check(req.headers['x-edit-pin']);
+      if (r === 'locked') { res.writeHead(429).end('cok fazla deneme'); return; }
+      if (r !== 'ok') { res.writeHead(403).end('yanlis pin'); return; }
+    }
+    const done = approvalStore.decide(id, decision);
+    if (!done) { res.writeHead(409).end('gone'); return; }
+    console.log('onay: ' + done.host + ' / ' + done.tool + ' -> ' + decision + ' (' + req.socket.remoteAddress + ')');
+    publishApprovals();
+    res.writeHead(204).end();
+  });
+}
+
 // ---------- AI kotalari (agent'lar yuzdeleri POST /api/quota ile yollar; token'lar makineden cikmaz) ----------
 const quotaStore = createQuotaStore(path.join(process.env.DATA_DIR || path.join(ROOT, 'data'), 'quotas.json'));
 function publishQuotas() {
@@ -298,6 +374,7 @@ if (process.env.DEMO_SESSIONS !== '1') publishSessions(); // demo kapaliysa gerc
 if (process.env.DEMO_QUOTAS !== '1') publishQuotas();     // kota: ayni sekilde
 publishPush();
 publishMedia();
+publishApprovals();
 
 for (const c of collectors) {
   const loop = async () => {
@@ -364,7 +441,8 @@ const server = http.createServer((req, res) => {
   // Ag korumasi: ev agi disindan gelen HER istegi (arayuz, API, SSE, agent) reddet.
   const reqPath = String(req.url || '').split('?')[0];
   const isAgentFile = req.method === 'GET' && (reqPath === '/api/agent/manifest' || reqPath.startsWith('/api/agent/file/'));
-  const isIngest = isAgentFile || (req.method === 'POST' && (reqPath === '/api/ingest' || reqPath === '/api/session' || reqPath === '/api/quota' || reqPath === '/api/push'));
+  const isApprovalHook = reqPath === '/api/approval' || /^\/api\/approval\/[0-9a-f]{24}$/.test(reqPath);
+  const isIngest = isAgentFile || isApprovalHook || (req.method === 'POST' && (reqPath === '/api/ingest' || reqPath === '/api/session' || reqPath === '/api/quota' || reqPath === '/api/push'));
   const guard = isIngest ? ingestGuard : viewerGuard;
   if (!guard.allowed(req.socket.remoteAddress)) {
     guard.logBlocked(req.socket.remoteAddress, isIngest ? 'agent' : 'goruntuleme');
@@ -378,6 +456,10 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (isApprovalHook) {
+    handleApprovalHook(req, res, url); // kendi token'ini kullanir (AGENT_TOKENS)
+    return;
+  }
   if (url.pathname === '/api/push' && req.method === 'POST') {
     handlePush(req, res); // kendi token'ini kullanir (AGENT_TOKENS ya da PUSH_TOKEN)
     return;
@@ -407,7 +489,12 @@ const server = http.createServer((req, res) => {
     }
     if (url.pathname === '/api/ui') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify(uiConfig));
+      res.end(JSON.stringify(Object.assign({}, uiConfig, { approvals: approvalsEnabled() })));
+      return;
+    }
+    const dm = /^\/api\/approval\/([0-9a-f]{24})\/decide$/.exec(url.pathname);
+    if (dm) {
+      handleApprovalDecide(req, res, dm[1]);
       return;
     }
     if (url.pathname === '/api/media/command' && req.method === 'POST') {

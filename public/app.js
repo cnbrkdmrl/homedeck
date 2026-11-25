@@ -1088,15 +1088,25 @@
     if (keepScroll) pagesEl.scrollLeft = sl;
   }
 
+  // Sayfa çubuğu: varsayılan olarak sayfa adları (PAGEBAR=dots ile eski noktalar)
+  var pagebar = 'names';
   function buildDots() {
     var n = layout.pages.length + (editing ? 1 : 0);
-    dotsEl.innerHTML = '';
     var cur = Math.round(pagesEl.scrollLeft / (pagesEl.clientWidth || 1));
+    dotsEl.className = 'dots ' + (pagebar === 'dots' ? 'dotmode' : 'names');
+    var html = '';
     for (var i = 0; i < n; i++) {
-      var dot = document.createElement('div');
-      dot.className = 'dot' + (i === cur ? ' on' : '');
-      dotsEl.appendChild(dot);
+      var name = i < layout.pages.length ? (layout.pages[i].title || String(i + 1)) : '＋';
+      html += pagebar === 'dots' ? '<div class="dot' + (i === cur ? ' on' : '') + '"></div>'
+        : '<button class="pg' + (i === cur ? ' on' : '') + '" data-i="' + i + '">' + esc(name) + '</button>';
     }
+    dotsEl.innerHTML = html;
+    centerPageItem(cur, false);
+  }
+  function centerPageItem(i, smooth) {
+    var el = dotsEl.children[i];
+    if (!el || pagebar === 'dots') return;
+    dotsEl.scrollTo({ left: el.offsetLeft - (dotsEl.clientWidth - el.offsetWidth) / 2, behavior: smooth ? 'smooth' : 'auto' });
   }
 
   function renderOne(w) {
@@ -1136,8 +1146,9 @@
   }
   pagesEl.addEventListener('scroll', function () {
     var i = Math.round(pagesEl.scrollLeft / pagesEl.clientWidth);
-    var dots = dotsEl.children;
-    for (var k = 0; k < dots.length; k++) dots[k].className = 'dot' + (k === i ? ' on' : '');
+    var dots = dotsEl.children, base = pagebar === 'dots' ? 'dot' : 'pg';
+    for (var k = 0; k < dots.length; k++) dots[k].className = base + (k === i ? ' on' : '');
+    centerPageItem(i, true);
     resetIdle();
   });
   ['touchstart', 'mousedown', 'keydown'].forEach(function (ev) { document.addEventListener(ev, resetIdle, { passive: true }); });
@@ -1148,7 +1159,7 @@
     if (e.key === 'ArrowLeft') pagesEl.scrollBy({ left: -w, behavior: 'smooth' });
   });
   dotsEl.addEventListener('click', function (e) {
-    var idx = Array.prototype.indexOf.call(dotsEl.children, e.target);
+    var idx = Array.prototype.indexOf.call(dotsEl.children, e.target.closest('.pg, .dot') || e.target);
     if (idx >= 0) pagesEl.scrollTo({ left: idx * pagesEl.clientWidth, behavior: 'smooth' });
   });
   function currentPageIndex() { return Math.round(pagesEl.scrollLeft / (pagesEl.clientWidth || 1)); }
@@ -1159,7 +1170,7 @@
   // =====================================================================
   var editing = false, selectedId = null, editPin = '', history = [];
   var dirty = false, savedRev = 0, saveT = null, saveLabel = '', editIdleT = null;
-  var sheetMode = '', pinBuf = '';
+  var sheetMode = '', pinBuf = '', pinPurpose = 'edit', pinTarget = '', pinTitle = 'Düzenleme PIN’i';
 
   function showToast(msg) {
     toastEl.textContent = msg;
@@ -1170,7 +1181,7 @@
 
   // ---- sheet (PIN, galeri, ayar, onay) ----
   function openSheet(html, mode) { sheetMode = mode; sheetEl.innerHTML = html; sheetEl.classList.add('on'); }
-  function closeSheet() { sheetMode = ''; sheetEl.classList.remove('on'); sheetEl.innerHTML = ''; }
+  function closeSheet() { sheetMode = ''; pinPurpose = 'edit'; pinTitle = 'Düzenleme PIN’i'; sheetEl.classList.remove('on'); sheetEl.innerHTML = ''; }
 
   function pinHtml(msg) {
     var dots = '';
@@ -1178,7 +1189,7 @@
     var keys = '';
     [1, 2, 3, 4, 5, 6, 7, 8, 9].forEach(function (k) { keys += '<button data-k="' + k + '">' + k + '</button>'; });
     keys += '<button data-k="x" class="alt">İptal</button><button data-k="0">0</button><button data-k="b" class="alt">⌫</button>';
-    return '<div class="card pin"><div class="ph">Düzenleme PIN’i</div><div class="pd">' + dots + '</div>' +
+    return '<div class="card pin"><div class="ph">' + esc(pinTitle) + '</div><div class="pd">' + dots + '</div>' +
       '<div class="pm">' + (msg || '&nbsp;') + '</div><div class="pk">' + keys + '</div></div>';
   }
   function askPin(msg) {
@@ -1187,6 +1198,7 @@
   }
   function submitPin() {
     var pin = pinBuf;
+    if (pinPurpose === 'approve') { sendDecision(pinTarget, 'allow', pin); return; }
     fetch(api('/api/edit/verify'), { method: 'POST', headers: { 'x-edit-pin': pin } }).then(function (r) {
       if (r.status === 204) { editPin = pin; closeSheet(); startEdit(); return; }
       askPin(r.status === 429 ? 'Çok fazla deneme, 1 dk bekle' : 'Yanlış PIN');
@@ -1600,8 +1612,8 @@
 
   function connect() {
     var es = new EventSource(api('/api/events'));
-    es.addEventListener('snapshot', function (e) { S = JSON.parse(e.data); renderAll(); setStatus(true, 'canlı'); markOnline(); });
-    es.addEventListener('update', function (e) { var m = JSON.parse(e.data); S[m.name] = m.entry; schedule(m.name); setStatus(true, 'canlı'); markOnline(); });
+    es.addEventListener('snapshot', function (e) { S = JSON.parse(e.data); apprRecv = Date.now(); renderAll(); renderApprovals(); setStatus(true, 'canlı'); markOnline(); });
+    es.addEventListener('update', function (e) { var m = JSON.parse(e.data); S[m.name] = m.entry; schedule(m.name); if (m.name === 'approvals') { apprRecv = Date.now(); renderApprovals(); } setStatus(true, 'canlı'); markOnline(); });
     es.addEventListener('layout', function (e) {
       var m = JSON.parse(e.data);
       if (editing || m.rev === savedRev) return; // kendi kaydimiz ya da duzenleme suruyor
@@ -1628,9 +1640,81 @@
   }, true);
   fetch(api('/api/ui')).then(function (r) { return r.ok ? r.json() : {}; }).then(function (u) {
     if (u && 'dim' in u) dimCfg = u.dim;
+    if (u && (u.pagebar === 'dots' || u.pagebar === 'names') && u.pagebar !== pagebar) { pagebar = u.pagebar; if (layout) buildDots(); }
     dimApply();
   }).catch(function () { dimApply(); });
   setInterval(dimApply, 30000);
+
+  // ---------- Claude izin onayları ----------
+  // Hub'a gelen PermissionRequest istekleri ekranın üstünde belirir. "Reddet" tek dokunuş, "İzin ver" PIN ister
+  // (PIN 2 dk bellekte tutulur; sayfa yenilenince silinir). İstek 90 sn sonra kendiliğinden düşer, Claude Code
+  // o durumda normal onay penceresine döner.
+  var apprEl = document.getElementById('appr'), apprSig = '', apprGone = {}, apprPin = '', apprPinUntil = 0, apprRecv = 0, APPR_TTL = 90000;
+  function apprList() {
+    var a = S.approvals && S.approvals.data;
+    return a && a.enabled && a.pending ? a.pending.filter(function (x) { return !apprGone[x.id]; }) : [];
+  }
+  function apprLeft(a) { return a.expires - S.approvals.ts - (Date.now() - apprRecv); }
+  function renderApprovals() {
+    if (!apprEl) return;
+    var list = apprList();
+    var sig = list.map(function (x) { return x.id; }).join(',');
+    if (sig === apprSig) return;
+    var fresh = list.some(function (x) { return apprSig.indexOf(x.id) < 0; });
+    apprSig = sig;
+    if (!list.length) { apprEl.classList.remove('on'); apprEl.innerHTML = ''; return; }
+    var a = list[0];
+    apprEl.innerHTML = '<div class="ap-c"><div class="ap-h"><b>' + Icons.ic('warn') + ' Claude izin istiyor</b><span>' + esc(a.project || '?') + (a.host ? ' · ' + esc(a.host) : '') + '</span><em class="ap-t"></em></div>' +
+      '<div class="ap-b"><span class="ap-tool">' + esc(a.tool) + '</span>' + (a.summary ? '<code>' + esc(a.summary) + '</code>' : '') + '</div>' +
+      '<div class="ap-bar"><i></i></div>' +
+      '<div class="ap-a"><button class="ap-no" data-ap="deny" data-id="' + a.id + '">Reddet</button><button class="ap-yes" data-ap="allow" data-id="' + a.id + '">İzin ver · PIN</button></div>' +
+      (list.length > 1 ? '<div class="ap-m">+' + (list.length - 1) + ' bekleyen daha</div>' : '') + '</div>';
+    apprEl.classList.add('on');
+    if (fresh) { dimWake = Date.now() + 60000; dimApply(); setTimeout(dimApply, 60500); } // gece ekranı uyandır
+    tickApprovals();
+  }
+  function tickApprovals() {
+    if (!apprEl || !apprSig) return;
+    var list = apprList();
+    if (!list.length) { renderApprovals(); return; }
+    var left = apprLeft(list[0]);
+    if (left <= 0) { apprGone[list[0].id] = true; apprSig = ''; renderApprovals(); return; }
+    var t = apprEl.querySelector('.ap-t'), bar = apprEl.querySelector('.ap-bar i');
+    if (t) t.textContent = Math.ceil(left / 1000) + ' sn';
+    if (bar) bar.style.width = Math.max(0, Math.min(100, left / APPR_TTL * 100)) + '%';
+  }
+  setInterval(tickApprovals, 1000);
+  function askApprovePin(id, msg) {
+    pinPurpose = 'approve'; pinTarget = id; pinTitle = 'İzin için PIN';
+    askPin(msg || '');
+    if (msg) sheetEl.querySelector('.card').classList.add('shake');
+  }
+  function sendDecision(id, decision, pin) {
+    var h = { 'Content-Type': 'application/json' };
+    if (pin) h['x-edit-pin'] = pin;
+    fetch(api('/api/approval/' + id + '/decide'), { method: 'POST', headers: h, body: JSON.stringify({ decision: decision }) }).then(function (r) {
+      if (r.status === 204) {
+        apprGone[id] = true;
+        if (decision === 'allow') { apprPin = pin; apprPinUntil = Date.now() + 120000; }
+        closeSheet(); showToast(decision === 'allow' ? 'İzin verildi' : 'Reddedildi');
+        apprSig = ''; renderApprovals(); return;
+      }
+      if (decision === 'allow' && (r.status === 403 || r.status === 429)) {
+        apprPin = ''; askApprovePin(id, r.status === 429 ? 'Çok fazla deneme, 1 dk bekle' : 'Yanlış PIN'); return;
+      }
+      apprGone[id] = true; closeSheet(); showToast('İstek artık geçerli değil'); apprSig = ''; renderApprovals();
+    }).catch(function () {
+      if (sheetMode === 'pin') askApprovePin(id, 'Hub’a ulaşılamıyor'); else showToast('Hub’a ulaşılamıyor');
+    });
+  }
+  if (apprEl) apprEl.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-ap]');
+    if (!b) return;
+    var id = b.getAttribute('data-id');
+    if (b.getAttribute('data-ap') === 'deny') sendDecision(id, 'deny', '');
+    else if (apprPin && Date.now() < apprPinUntil) sendDecision(id, 'allow', apprPin);
+    else askApprovePin(id, '');
+  });
 
   loadLayout().then(function () {
     build(); resetIdle(); connect();

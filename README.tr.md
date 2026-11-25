@@ -25,7 +25,8 @@ Demo modunda alındı (örnek veri, gerçek hesap yok). Varsayılan düzende on 
 - **Makineler:** her makinede çalışan küçük agent CPU, RAM, diskler, ağ, sıcaklık, (varsa) GPU ve pil bilgisini gönderir (macOS / Linux / Windows).
 - **Servis kontrolü:** listelediğin adreslerin / TCP portlarının ayakta olup olmadığı ve yanıt süresi (`SERVICES`), gecikme grafiğiyle.
 - **Çalan şarkı:** macOS'ta Apple Music ve Spotify için şarkı bilgisi ve ⏮ ⏯ ⏭ düğmeleri (agent'ta opt-in).
-- **Gece kısma:** ekran zamanlanmış kararır, dokununca uyanır; vektör ikonlar, büyük sayfa göstergesi.
+- **Gece kısma:** ekran zamanlanmış kararır, dokununca uyanır; vektör ikonlar, adlı sayfa çubuğu (`PAGEBAR=dots` ile noktalar).
+- **Ekrandan izin onayı:** Claude Code izin isteklerini ekrandan onayla ya da reddet (opt-in, onay için PIN).
 - **Sağlık özeti:** yük, disk, bellek, sıcaklık, konteyner ve makine durumu tek bakışta.
 - **Docker** konteyner listesi (salt okunur socket proxy), **sistem** metrikleri, **modem** trafik sayacı (UPnP/IGD).
 - **Hava, güneş/ay, hava kalitesi** (Open-Meteo, anahtarsız); **takvim** ve **akıllı ev cihazları** Home Assistant üzerinden (salt okunur).
@@ -81,6 +82,16 @@ Değerler `id`'ye göre tutulur; bildirimler `ttl` dakika sonra düşer (varsay�
 ## Claude Code kancaları ve kota
 
 `node hooks/install-hooks.mjs --dry-run` ile önce ne yapacağını gör, sonra `node hooks/install-hooks.mjs` ile kur. Makinede agent kurulu olmalı. Claude kotası için OAuth yöntemi **resmi olmayan, belgelenmemiş** bir uç nokta kullanır; varsayılan **kapalı**. Açmadan önce `agent/claude-usage.mjs` içindeki notları oku.
+
+### Ekrandan izin onayı (opt-in)
+
+Claude Code bir izin penceresi açtığında (ör. `Bash: npm test`) ekranın üstünde bir kart çıkar: **Reddet** (tek dokunuş) ya da **İzin ver** (PIN ister). Karar Claude Code'a iletilir; terminaldeki pencere de çalışır, hangisi önce cevaplanırsa o geçerli olur. Kurulum: `node hooks/install-hooks.mjs --approvals`.
+
+- **İki taraf da açık olmalı:** makinede `--approvals` ile kurulum, hub'da `EDIT_PIN` ve `AGENT_TOKENS` tanımlı (yoksa hub onayları kapalı tutar; `APPROVALS=off` ile elle kapatılır). Makine tarafını kapatmak için `agent.config.json`'a `"approvals": false` ya da `HOMEDECK_APPROVALS=0`; kaldırmak için `--uninstall`.
+- **Varsayılan her zaman "sor":** hub kapalı, ağ yok, yanlış token, 90 sn doldu, iptal, herhangi bir hata → kanca karar yazmaz, Claude Code normal pencereyi gösterir. Kendiliğinden "izin ver" diyen bir yol yok.
+- **PIN:** "İzin ver" `EDIT_PIN` ister (5 yanlışta 1 dk kilit, düzenleme PIN'iyle ortak). "Reddet" PIN istemez. Doğru PIN 2 dk bellekte tutulur. Tahmin edilmesi zor bir PIN seç.
+- **Ne gönderilir:** araç adı, proje klasörü adı ve kısa tek satır özet; `token=`, `password`, `Bearer …`, `sk-…` gibi sırlar `•••` ile gizlenir, dosya içeriği gitmez. `HOMEDECK_APPROVAL_DETAIL=0` yalnız araç adını gönderir.
+- En çok 20 bekleyen istek; bir makine başkasının isteğini göremez; "her zaman izin ver" yoktur.
 
 ## Çalan şarkı (macOS: Apple Music / Spotify)
 

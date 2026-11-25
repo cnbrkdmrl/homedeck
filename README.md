@@ -25,7 +25,8 @@ Captured in demo mode (sample data, no real accounts). The default layout has te
 - **Machines**: a tiny agent (single file, Node 18.15+; macOS / Linux / Windows) reports CPU, RAM, disks, network, temperature, optional GPU and battery.
 - **Service checks**: up/down and response time for any URLs or TCP ports you list (`SERVICES`), with a latency sparkline.
 - **Now playing**: track info and ⏮ ⏯ ⏭ controls for Apple Music and Spotify on macOS (opt-in agent feature).
-- **Night dimming**: the screen dims on a schedule and wakes on touch; vector icons, large page indicator.
+- **Night dimming**: the screen dims on a schedule and wakes on touch; vector icons, named page bar (`PAGEBAR=dots` for dots).
+- **Permission approvals**: allow or deny Claude Code permission prompts from the display (opt-in, PIN for Allow).
 - **Health summary**: one glance at load, disk, memory, temperature, containers and machines (warns before things break).
 - **Docker** container list through a read-only socket proxy, **system** metrics, **modem** traffic counter (UPnP/IGD).
 - **Weather, sun & moon, air quality** (Open-Meteo, no key), **calendar** and **smart-home devices** via Home Assistant (read-only).
@@ -107,6 +108,20 @@ node hooks/install-hooks.mjs --uninstall
 ```
 
 The machine must already run the agent. Hooks never block Claude Code (exit code 0, circuit breaker). The first prompt of a session is shown as its title; disable with `HOMEDECK_TITLES=0`.
+
+### Permission approvals from the display (opt-in)
+
+When Claude Code opens a permission dialog (for example `Bash: npm test`), a card appears at the top of the screen: **Deny** (one tap) or **Allow** (asks for the PIN). The decision is passed to Claude Code; the terminal dialog keeps working and whichever answers first wins.
+
+```bash
+node hooks/install-hooks.mjs --approvals   # adds the PermissionRequest hook on top of the base hooks
+```
+
+- **Both sides must opt in:** install with `--approvals` on the machine, and set `EDIT_PIN` and `AGENT_TOKENS` on the hub (without both, the hub keeps approvals off; `APPROVALS=off` disables them explicitly). Turn the machine side off with `"approvals": false` in `agent.config.json` or `HOMEDECK_APPROVALS=0`; remove with `--uninstall`.
+- **The default is always "ask":** hub down, no network, wrong token, 90 s elapsed, cancelled, any error → the hook writes no decision and Claude Code shows its normal dialog. There is no path that allows anything by itself.
+- **PIN:** Allow needs `EDIT_PIN` (5 wrong tries lock for 1 min, shared with the layout editor). Deny needs no PIN (denying is the safe direction). A correct PIN is kept in memory for 2 min. Use a PIN that is hard to guess; the screen is in plain view.
+- **What is sent:** tool name, project folder name and a short one-line summary (command / file path / URL) with obvious secrets (`token=`, `password`, `Bearer …`, `sk-…`, `ghp_…`) masked as `•••`. File contents are never sent. `HOMEDECK_APPROVAL_DETAIL=0` sends the tool name only. Requests live in memory only; each decision is logged on the hub (tool, machine, address; not the summary).
+- **Limits:** at most 20 pending requests; a machine cannot see or cancel another machine's request; ids are unguessable (96 bit). There is no "always allow", only one-off decisions.
 
 ### Claude quota (opt-in, unofficial)
 

@@ -520,3 +520,31 @@ body.editing .page { touch-action: pan-x; }
 
 /* gece kısma */
 .dim-ov { position: fixed; inset: 0; z-index: 90; background: #000; opacity: 0; pointer-events: none; transition: opacity 1.8s ease; }
+
+/* sayfa çubuğu (sayfa adları) */
+.bar .dots.names { flex: 1 1 auto; min-width: 0; gap: 1vh; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; margin-right: 2vh; padding: 0.4vh 0; }
+.bar .dots.names::-webkit-scrollbar { display: none; }
+.pg { flex: 0 0 auto; border: 0; border-radius: 2.4vh; min-height: 4.8vh; padding: 0 2.2vh; background: rgba(255,255,255,.07); color: var(--dim);
+  font: inherit; font-size: .74rem; font-weight: 600; white-space: nowrap; transition: background .2s, color .2s; }
+.pg:active { background: rgba(255,255,255,.18); }
+.pg.on { background: var(--acc); color: #0b1020; }
+
+/* Claude izin onayı */
+.appr { position: fixed; left: 50%; top: 1.4vh; transform: translate(-50%, -140%); z-index: 60; width: min(94vw, 118vh); transition: transform .3s ease; pointer-events: none; }
+.appr.on { transform: translate(-50%, 0); pointer-events: auto; }
+.ap-c { background: #1d2350; border: 2px solid var(--warn); border-radius: 2vh; padding: 1.6vh 2vh; box-shadow: 0 2vh 6vh rgba(0,0,0,.6); }
+.ap-h { display: flex; align-items: baseline; gap: 1.4vh; font-size: .74rem; }
+.ap-h b { color: var(--warn); font-weight: 700; }
+.ap-h span { color: var(--dim); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ap-h em { margin-left: auto; font-style: normal; color: var(--dim); font-variant-numeric: tabular-nums; }
+.ap-b { display: flex; align-items: flex-start; gap: 1.4vh; margin-top: 1vh; }
+.ap-tool { flex: 0 0 auto; background: rgba(251,191,36,.18); color: #fde68a; border-radius: 1vh; padding: .3vh 1.2vh; font-size: .66rem; font-weight: 700; }
+.ap-b code { min-width: 0; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .68rem; color: var(--fg); overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.ap-bar { height: .6vh; border-radius: 1vh; background: rgba(255,255,255,.1); margin: 1.4vh 0; overflow: hidden; }
+.ap-bar i { display: block; height: 100%; width: 100%; background: var(--warn); transition: width 1s linear; }
+.ap-a { display: flex; gap: 1.6vh; }
+.ap-a button { flex: 1; border: 0; border-radius: 1.6vh; min-height: 7.2vh; font: inherit; font-size: .84rem; font-weight: 700; }
+.ap-no { background: rgba(248,113,113,.22); color: #fecaca; }
+.ap-yes { background: var(--good); color: #052e1d; }
+.ap-a button:active { filter: brightness(1.25); }
+.ap-m { text-align: center; margin-top: 1vh; font-size: .62rem; color: var(--dim); }

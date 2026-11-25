@@ -42,6 +42,8 @@ services:
       SERVICES: "${SERVICES:-}"
       DIM: "${DIM:-23:00-07:00}"
       DIM_LEVEL: "${DIM_LEVEL:-0.35}"
+      PAGEBAR: "${PAGEBAR:-names}"
+      APPROVALS: "${APPROVALS:-}"   # off: disable Claude permission approvals on the hub
       # Gitea paneli (opsiyonel, salt okuma): uc degiskenin hepsi dolu olmali
       GITEA_URL: "${GITEA_URL:-}"
       GITEA_REPOS: "${GITEA_REPOS:-}"
