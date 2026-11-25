@@ -17,7 +17,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #0b1020; col
   font-size: 3vh; user-select: none; -webkit-user-select: none; }
 body { background: linear-gradient(135deg, var(--bg1), var(--bg2)); }
 
-.pages { position: fixed; left: 0; top: 0; right: 0; bottom: 5vh; display: flex; overflow-x: auto; overflow-y: hidden;
+.pages { position: fixed; left: 0; top: 0; right: 0; bottom: 7vh; display: flex; overflow-x: auto; overflow-y: hidden;
   scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .pages::-webkit-scrollbar { display: none; }
 .page { flex: 0 0 100%; width: 100%; height: 100%; scroll-snap-align: start; padding: 1.2vh 1.2vh 0.4vh;
@@ -33,12 +33,13 @@ body { background: linear-gradient(135deg, var(--bg1), var(--bg2)); }
 .center { display: flex; align-items: center; justify-content: center; }
 
 /* bottom bar */
-.bar { position: fixed; left: 0; right: 0; bottom: 0; height: 5vh; display: flex; align-items: center; justify-content: space-between; padding: 0 2vh; }
-.dots { display: flex; gap: 1vh; }
-.dot { width: 1vh; height: 1vh; border-radius: 50%; background: rgba(255,255,255,0.25); transition: all .2s; }
-.dot.on { width: 3vh; border-radius: 1vh; background: var(--acc); }
-.status { display: flex; align-items: center; gap: 0.8vh; font-size: .62rem; color: var(--dim); }
-.sdot { width: 1vh; height: 1vh; border-radius: 50%; background: var(--good); }
+.bar { position: fixed; left: 0; right: 0; bottom: 0; height: 7vh; display: flex; align-items: center; justify-content: space-between; padding: 0 2.4vh; }
+.dots { display: flex; align-items: center; gap: 1.6vh; }
+.dot { width: 1.7vh; height: 1.7vh; border-radius: 50%; background: rgba(255,255,255,0.28); transition: all .2s; cursor: pointer; position: relative; }
+.dot::after { content: ""; position: absolute; inset: -1.6vh -0.8vh; }
+.dot.on { width: 5vh; border-radius: 1vh; background: var(--acc); }
+.status { display: flex; align-items: center; gap: 1vh; font-size: .8rem; color: var(--dim); }
+.sdot { width: 1.5vh; height: 1.5vh; border-radius: 50%; background: var(--good); }
 .sdot.off { background: var(--bad); }
 
 /* clock */
@@ -502,3 +503,20 @@ body.editing .page { touch-action: pan-x; }
 .w.h3 .ha-vs { font-size: 2.4rem; }
 .w.h3 .ha-st { font-size: .8rem; }
 .w.h3 .ha-cn { font-size: .85rem; }
+
+/* vektör ikonlar */
+.ic { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; vertical-align: -0.14em; flex: 0 0 auto; }
+.wx-ico, .fc-i, .wx-d span { color: #c7d0ff; }
+.wx-ico .ic, .fc-i .ic, .wx-d span .ic { stroke-width: 1.4; }
+.fc-p .ic { width: .9em; height: .9em; vertical-align: -0.1em; margin-right: .1em; }
+.sky-times .ic { color: var(--warn); vertical-align: -0.2em; }
+.gi span { display: inline-flex; color: var(--acc); }
+.gi span .ic { width: 1.5rem; height: 1.5rem; }
+.oi .ic { width: 3.4rem; height: 3.4rem; color: var(--dim); }
+.ha-act .ic, .cal-warn .ic, .ha-filter .ic, .m-bat .ic, .usb .ic, .wz-i .ic { width: 1em; height: 1em; vertical-align: -0.16em; }
+.ha-act.on .ic { color: var(--hot); }
+.ha-act.cool .ic { color: #7dd3fc; }
+.wz-i { color: var(--warn); }
+
+/* gece kısma */
+.dim-ov { position: fixed; inset: 0; z-index: 90; background: #000; opacity: 0; pointer-events: none; transition: opacity 1.8s ease; }

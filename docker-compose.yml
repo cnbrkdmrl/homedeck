@@ -40,6 +40,8 @@ services:
       # BIND_HOST: ""    # istersen sadece bir LAN arayuzune bagla (ornek: sunucunun LAN IP'si)
       # Servis kontrolu (opsiyonel): ad=adres (http/https/tcp), virgulle. Ornek: Gitea=http://127.0.0.1:3000,SSH=tcp://127.0.0.1:22
       SERVICES: "${SERVICES:-}"
+      DIM: "${DIM:-23:00-07:00}"
+      DIM_LEVEL: "${DIM_LEVEL:-0.35}"
       # Gitea paneli (opsiyonel, salt okuma): uc degiskenin hepsi dolu olmali
       GITEA_URL: "${GITEA_URL:-}"
       GITEA_REPOS: "${GITEA_REPOS:-}"

@@ -35,9 +35,7 @@
   }
   function fmtMbit(v) { return v >= 100 ? v.toFixed(0) : v >= 10 ? v.toFixed(1) : v.toFixed(2); }
 
-  var WX = { 0: '☀️', 1: '🌤️', 2: '⛅', 3: '☁️', 45: '🌫️', 48: '🌫️', 51: '🌦️', 53: '🌦️', 55: '🌦️', 61: '🌧️', 63: '🌧️', 65: '🌧️',
-    71: '🌨️', 73: '🌨️', 75: '🌨️', 80: '🌦️', 81: '🌧️', 82: '⛈️', 95: '⛈️', 96: '⛈️', 99: '⛈️' };
-  function wxIcon(c) { return WX[c] || '☁️'; }
+  function wxIcon(c, night) { return Icons.wx(c, night); }
 
   // ---------- SVG yardimcilari ----------
   function ringSVG(pct, label, color) {
@@ -73,47 +71,47 @@
   // sizes: [etiket, genislik, yukseklik] - ilk boyut en kucuk; galeri varsayilan olarak 'def' indeksini dener
   var CH = [['none', '—'], ['weather', 'Hava durumu'], ['calendar', 'Takvim'], ['nextup', 'Sıradaki etkinlik'], ['worldclock', 'Dünya saatleri'], ['wordclock', 'Kelime saati'], ['clock', 'Saat'], ['fx', 'Döviz'], ['crypto', 'Kripto'], ['gold', 'Altın'], ['hn', 'Hacker News'], ['quota', 'AI kotaları'], ['health', 'Sağlık özeti'], ['sky', 'Güneş ve Ay'], ['airq', 'Hava kalitesi'], ['ha_air', 'Hava temizleyici'], ['ha_vac', 'Robot süpürge'], ['ha_clim', 'Kombi'], ['modem', 'Modem'], ['network', 'İnternet'], ['gitea', 'Gitea'], ['notify', 'Bildirimler'], ['pushvals', 'Gönderilen değerler'], ['sessions', 'AI işleri']];
   var CATALOG = {
-    clock:    { name: 'Saat', cat: 'Zaman', icon: '🕐', def: 1, sizes: [['S', 3, 2], ['M', 4, 3], ['L', 6, 3], ['XL', 6, 6]],
+    clock:    { name: 'Saat', cat: 'Zaman', icon: 'clock', def: 1, sizes: [['S', 3, 2], ['M', 4, 3], ['L', 6, 3], ['XL', 6, 6]],
                 opts: [{ key: 'style', label: 'Stil', choices: [['digital', 'Dijital'], ['analog', 'Analog'], ['animated', 'Animasyonlu']] }], defaults: { style: 'digital' } },
-    weather:  { name: 'Hava durumu', cat: 'Zaman', icon: '⛅', def: 0, sizes: [['M', 4, 3], ['L', 6, 3], ['XL', 6, 6]] },
-    ha_air:   { name: 'Hava temizleyici', cat: 'Ev', icon: '🌬️', def: 1, sizes: [['S', 3, 3], ['M', 4, 3], ['L', 6, 3]] },
-    ha_vac:   { name: 'Robot süpürge', cat: 'Ev', icon: '🧹', def: 0, sizes: [['S', 3, 3], ['M', 4, 3], ['L', 6, 3]] },
-    ha_clim:  { name: 'Kombi / termostat', cat: 'Ev', icon: '🔥', def: 0, sizes: [['S', 3, 3], ['M', 4, 3], ['L', 6, 3]] },
-    calendar: { name: 'Takvim', cat: 'Zaman', icon: '📅', def: 1, sizes: [['M', 4, 3], ['L', 6, 3], ['XL', 6, 6]] },
-    forecast: { name: 'Hava tahmini', cat: 'Zaman', icon: '🕒', def: 1, sizes: [['M', 6, 3], ['L', 8, 3], ['XL', 12, 3]],
+    weather:  { name: 'Hava durumu', cat: 'Zaman', icon: 'cloudsun', def: 0, sizes: [['M', 4, 3], ['L', 6, 3], ['XL', 6, 6]] },
+    ha_air:   { name: 'Hava temizleyici', cat: 'Ev', icon: 'wind', def: 1, sizes: [['S', 3, 3], ['M', 4, 3], ['L', 6, 3]] },
+    ha_vac:   { name: 'Robot süpürge', cat: 'Ev', icon: 'vac', def: 0, sizes: [['S', 3, 3], ['M', 4, 3], ['L', 6, 3]] },
+    ha_clim:  { name: 'Kombi / termostat', cat: 'Ev', icon: 'flame', def: 0, sizes: [['S', 3, 3], ['M', 4, 3], ['L', 6, 3]] },
+    calendar: { name: 'Takvim', cat: 'Zaman', icon: 'calendar', def: 1, sizes: [['M', 4, 3], ['L', 6, 3], ['XL', 6, 6]] },
+    forecast: { name: 'Hava tahmini', cat: 'Zaman', icon: 'cloud', def: 1, sizes: [['M', 6, 3], ['L', 8, 3], ['XL', 12, 3]],
                 opts: [{ key: 'mode', label: 'Görünüm', choices: [['hourly', 'Saatlik'], ['daily', '7 günlük']] }], defaults: { mode: 'hourly' } },
-    sky:      { name: 'Güneş ve Ay', cat: 'Zaman', icon: '🌅', def: 0, sizes: [['M', 4, 3], ['L', 6, 3], ['XL', 6, 6]] },
-    airq:     { name: 'Hava kalitesi', cat: 'Zaman', icon: '🍃', def: 1, sizes: [['S', 3, 3], ['M', 4, 3], ['L', 6, 3]] },
-    ring:     { name: 'Halka (CPU/RAM/Disk)', cat: 'Sistem', icon: '◔', def: 1, sizes: [['S', 2, 3], ['M', 3, 3], ['L', 4, 4]],
+    sky:      { name: 'Güneş ve Ay', cat: 'Zaman', icon: 'sunrise', def: 0, sizes: [['M', 4, 3], ['L', 6, 3], ['XL', 6, 6]] },
+    airq:     { name: 'Hava kalitesi', cat: 'Zaman', icon: 'leaf', def: 1, sizes: [['S', 3, 3], ['M', 4, 3], ['L', 6, 3]] },
+    ring:     { name: 'Halka (CPU/RAM/Disk)', cat: 'Sistem', icon: 'ring', def: 1, sizes: [['S', 2, 3], ['M', 3, 3], ['L', 4, 4]],
                 opts: [{ key: 'metric', label: 'Ölçü', choices: [['cpu', 'CPU'], ['ram', 'RAM'], ['disk', 'Disk'], ['temp', 'Sıcaklık']] }], defaults: { metric: 'cpu' } },
-    cpugraph: { name: 'CPU geçmişi', cat: 'Sistem', icon: '📈', def: 1, sizes: [['S', 4, 2], ['M', 6, 3], ['L', 12, 3]] },
-    docker:   { name: 'Docker', cat: 'Sistem', icon: '🐳', def: 0, sizes: [['M', 4, 3], ['L', 6, 3], ['XL', 6, 6]] },
-    machines: { name: 'Makineler', cat: 'Sistem', icon: '🖥️', def: 0, sizes: [['L', 12, 4], ['XL', 12, 6]] },
-    modem:    { name: 'Modem (ev interneti)', cat: 'Ağ', icon: '🌐', def: 1, sizes: [['S', 3, 2], ['M', 4, 3], ['L', 8, 3], ['XL', 12, 6]] },
-    network:  { name: 'İnternet', cat: 'Ağ', icon: '📶', def: 1, sizes: [['S', 3, 2], ['M', 4, 3], ['L', 8, 3], ['XL', 12, 6]] },
-    quota:    { name: 'AI kotaları', cat: 'AI', icon: '✳️', def: 0, sizes: [['M', 6, 3], ['L', 8, 3], ['XL', 12, 6]],
+    cpugraph: { name: 'CPU geçmişi', cat: 'Sistem', icon: 'chart', def: 1, sizes: [['S', 4, 2], ['M', 6, 3], ['L', 12, 3]] },
+    docker:   { name: 'Docker', cat: 'Sistem', icon: 'box', def: 0, sizes: [['M', 4, 3], ['L', 6, 3], ['XL', 6, 6]] },
+    machines: { name: 'Makineler', cat: 'Sistem', icon: 'server', def: 0, sizes: [['L', 12, 4], ['XL', 12, 6]] },
+    modem:    { name: 'Modem (ev interneti)', cat: 'Ağ', icon: 'globe', def: 1, sizes: [['S', 3, 2], ['M', 4, 3], ['L', 8, 3], ['XL', 12, 6]] },
+    network:  { name: 'İnternet', cat: 'Ağ', icon: 'wifi', def: 1, sizes: [['S', 3, 2], ['M', 4, 3], ['L', 8, 3], ['XL', 12, 6]] },
+    quota:    { name: 'AI kotaları', cat: 'AI', icon: 'sparkle', def: 0, sizes: [['M', 6, 3], ['L', 8, 3], ['XL', 12, 6]],
                 opts: [{ key: 'provider', label: 'Ajan', choices: [['all', 'Hepsi'], ['claude', 'Claude'], ['codex', 'Codex'], ['antigravity', 'Antigravity']] },
                        { key: 'model', label: 'Model limiti', choices: [['all', 'Hepsi'], ['none', 'Sadece genel'], ['fable', 'Fable'], ['sonnet', 'Sonnet'], ['opus', 'Opus']] }],
                 defaults: { provider: 'all', model: 'all' } },
-    sessions: { name: 'AI işleri', cat: 'AI', icon: '🤖', def: 0, sizes: [['S', 4, 3], ['L', 6, 6], ['XL', 12, 6]] },
-    nextup:   { name: 'Sıradaki etkinlik', cat: 'Zaman', icon: '⏭️', def: 1, sizes: [['S', 3, 2], ['M', 4, 3], ['L', 6, 3]] },
-    worldclock: { name: 'Dünya saatleri', cat: 'Zaman', icon: '🌍', def: 1, sizes: [['S', 3, 3], ['M', 4, 3], ['L', 6, 3]],
+    sessions: { name: 'AI işleri', cat: 'AI', icon: 'bot', def: 0, sizes: [['S', 4, 3], ['L', 6, 6], ['XL', 12, 6]] },
+    nextup:   { name: 'Sıradaki etkinlik', cat: 'Zaman', icon: 'skip', def: 1, sizes: [['S', 3, 2], ['M', 4, 3], ['L', 6, 3]] },
+    worldclock: { name: 'Dünya saatleri', cat: 'Zaman', icon: 'globe', def: 1, sizes: [['S', 3, 3], ['M', 4, 3], ['L', 6, 3]],
                 opts: [{ key: 'set', label: 'Şehirler', choices: [['dunya', 'İstanbul · Londra · New York · Tokyo'], ['avrupa', 'Avrupa'], ['amerika', 'Amerika'], ['asya', 'Asya']] }], defaults: { set: 'dunya' } },
-    wordclock: { name: 'Kelime saati', cat: 'Zaman', icon: '🔤', def: 1, sizes: [['S', 3, 3], ['M', 4, 3], ['L', 6, 3], ['XL', 6, 6]] },
-    fx:       { name: 'Döviz', cat: 'Piyasa', icon: '💱', def: 0, sizes: [['S', 3, 2], ['M', 4, 3], ['L', 6, 3]] },
-    gold:     { name: 'Altın', cat: 'Piyasa', icon: '🪙', def: 1, sizes: [['S', 3, 2], ['M', 4, 3], ['L', 6, 3]] },
-    crypto:   { name: 'Kripto', cat: 'Piyasa', icon: '₿', def: 1, sizes: [['S', 3, 2], ['M', 4, 3], ['L', 6, 3]] },
-    hn:       { name: 'Hacker News', cat: 'Haber', icon: '📰', def: 1, sizes: [['S', 4, 2], ['M', 6, 3], ['L', 8, 3], ['XL', 8, 6]] },
-    stack:    { name: 'Akıllı yığın', cat: 'Araçlar', icon: '🗂️', def: 1, sizes: [['S', 3, 3], ['M', 4, 3], ['L', 6, 3], ['XL', 6, 6]],
+    wordclock: { name: 'Kelime saati', cat: 'Zaman', icon: 'type', def: 1, sizes: [['S', 3, 3], ['M', 4, 3], ['L', 6, 3], ['XL', 6, 6]] },
+    fx:       { name: 'Döviz', cat: 'Piyasa', icon: 'exchange', def: 0, sizes: [['S', 3, 2], ['M', 4, 3], ['L', 6, 3]] },
+    gold:     { name: 'Altın', cat: 'Piyasa', icon: 'coin', def: 1, sizes: [['S', 3, 2], ['M', 4, 3], ['L', 6, 3]] },
+    crypto:   { name: 'Kripto', cat: 'Piyasa', icon: 'bitcoin', def: 1, sizes: [['S', 3, 2], ['M', 4, 3], ['L', 6, 3]] },
+    hn:       { name: 'Hacker News', cat: 'Haber', icon: 'news', def: 1, sizes: [['S', 4, 2], ['M', 6, 3], ['L', 8, 3], ['XL', 8, 6]] },
+    stack:    { name: 'Akıllı yığın', cat: 'Araçlar', icon: 'layers', def: 1, sizes: [['S', 3, 3], ['M', 4, 3], ['L', 6, 3], ['XL', 6, 6]],
                 opts: [{ key: 'a', label: '1. widget', choices: CH }, { key: 'b', label: '2. widget', choices: CH }, { key: 'c', label: '3. widget', choices: CH }, { key: 'd', label: '4. widget', choices: CH },
                        { key: 'every', label: 'Geçiş süresi', choices: [['5', '5 sn'], ['8', '8 sn'], ['15', '15 sn'], ['30', '30 sn']] }],
                 defaults: { a: 'nextup', b: 'weather', c: 'fx', d: 'none', every: '8' } },
-    gitea:    { name: 'Gitea (commit + CI)', cat: 'Araçlar', icon: '🌿', def: 1, sizes: [['M', 4, 3], ['L', 6, 3], ['XL', 8, 6]] },
-    pushvals: { name: 'Gönderilen değerler', cat: 'Araçlar', icon: '📮', def: 0, sizes: [['S', 3, 2], ['M', 6, 3], ['L', 8, 3]] },
-    services: { name: 'Servis kontrolü', cat: 'Ağ', icon: '📡', def: 0, sizes: [['M', 4, 3], ['L', 6, 3], ['XL', 8, 6]] },
-    nowplaying: { name: 'Çalıyor (müzik)', cat: 'Araçlar', icon: '🎵', def: 0, sizes: [['M', 4, 3], ['L', 6, 3], ['XL', 12, 6]] },
-    health:   { name: 'Sağlık özeti', cat: 'Sistem', icon: '🩺', def: 0, sizes: [['M', 4, 3], ['L', 6, 3], ['XL', 6, 6]] },
-    notify:   { name: 'Bildirimler', cat: 'Araçlar', icon: '🔔', def: 0, sizes: [['S', 4, 3], ['L', 6, 3], ['XL', 8, 6]] }
+    gitea:    { name: 'Gitea (commit + CI)', cat: 'Araçlar', icon: 'branch', def: 1, sizes: [['M', 4, 3], ['L', 6, 3], ['XL', 8, 6]] },
+    pushvals: { name: 'Gönderilen değerler', cat: 'Araçlar', icon: 'mail', def: 0, sizes: [['S', 3, 2], ['M', 6, 3], ['L', 8, 3]] },
+    services: { name: 'Servis kontrolü', cat: 'Ağ', icon: 'pulse', def: 0, sizes: [['M', 4, 3], ['L', 6, 3], ['XL', 8, 6]] },
+    nowplaying: { name: 'Çalıyor (müzik)', cat: 'Araçlar', icon: 'music', def: 0, sizes: [['M', 4, 3], ['L', 6, 3], ['XL', 12, 6]] },
+    health:   { name: 'Sağlık özeti', cat: 'Sistem', icon: 'heart', def: 0, sizes: [['M', 4, 3], ['L', 6, 3], ['XL', 6, 6]] },
+    notify:   { name: 'Bildirimler', cat: 'Araçlar', icon: 'bell', def: 0, sizes: [['S', 4, 3], ['L', 6, 3], ['XL', 8, 6]] }
   };
   var CAT_ORDER = ['Zaman', 'Ev', 'Sistem', 'Ağ', 'AI', 'Piyasa', 'Haber', 'Araçlar'];
 
@@ -259,7 +257,7 @@
       if (!items.length) html = '<div class="hint">Önümüzdeki günlerde etkinlik yok.</div>';
       el.innerHTML = '<div class="title">Takvim</div>' + (nextLine ? '<div class="cal-next">' + nextLine + '</div>' : '') +
         '<div class="cal-list">' + html + '</div><div class="cal-more"></div>' +
-        (c.failed && c.failed.length ? '<div class="cal-warn">⚠ ' + c.failed.length + ' takvim okunamadı</div>' : '');
+        (c.failed && c.failed.length ? '<div class="cal-warn">' + Icons.ic('warn') + ' ' + c.failed.length + ' takvim okunamadı</div>' : '');
       var list = el.querySelector('.cal-list');
       while (list.scrollHeight > list.clientHeight + 1 && list.lastElementChild) list.removeChild(list.lastElementChild);
       while (list.lastElementChild && list.lastElementChild.className === 'cal-d') list.removeChild(list.lastElementChild); // altında etkinliği kalmayan gün başlığı
@@ -295,7 +293,7 @@
         var filter = '';
         if (sn.filterLeft !== null) {
           var fl = Math.max(0, Math.min(100, sn.filterLeft)), dead = fl <= 10;
-          filter = '<div class="ha-filter' + (dead ? ' dead' : '') + '"><div class="ha-fl"><span>' + (dead ? '⚠ Filtre bitti, değiştir' : 'Filtre') + '</span><b>%' + Math.round(fl) + '</b></div>' +
+          filter = '<div class="ha-filter' + (dead ? ' dead' : '') + '"><div class="ha-fl"><span>' + (dead ? Icons.ic('warn') + ' Filtre bitti, değiştir' : 'Filtre') + '</span><b>%' + Math.round(fl) + '</b></div>' +
             '<div class="mbar"><div style="width:' + Math.max(fl, 2) + '%;background:' + (dead ? '#f87171' : fl < 30 ? '#fbbf24' : '#34d399') + '"></div></div>' +
             (dead && sn.filterHours !== null && !compact ? '<small>' + Math.round(sn.filterHours) + ' saat kullanıldı</small>' : '') + '</div>';
         }
@@ -325,7 +323,7 @@
     }
   };
 
-  var CLIM_ACT = { heating: ['Isıtıyor 🔥', 'on'], cooling: ['Soğutuyor ❄️', 'cool'], idle: ['Bekliyor', ''], off: ['Kapalı', ''], drying: ['Nem alıyor', ''], fan: ['Fan', ''] };
+  var CLIM_ACT = { heating: [Icons.ic('flame') + ' Isıtıyor', 'on'], cooling: [Icons.ic('snow') + ' Soğutuyor', 'cool'], idle: ['Bekliyor', ''], off: ['Kapalı', ''], drying: ['Nem alıyor', ''], fan: ['Fan', ''] };
   var CLIM_MODE = { heat: 'Isıtma açık', off: 'Kapalı', auto: 'Otomatik', cool: 'Soğutma', heat_cool: 'Isıt/Soğut', dry: 'Nem alma', fan_only: 'Fan' };
   var CLIM_PRESET = { home: 'Evde', sleep: 'Uyku', away: 'Dışarıda', custom: 'Özel', auto: 'Otomatik', schedule: 'Program', eco: 'Eko', comfort: 'Konfor', boost: 'Hızlı' };
   widgets.ha_clim = {
@@ -379,7 +377,7 @@
           var d = w.days[i], dt = new Date(d.date + 'T12:00:00');
           cols += '<div class="fc"><b>' + (i === 0 ? 'Bugün' : DAYS_S[dt.getDay()]) + '</b><span class="fc-i">' + wxIcon(d.code) + '</span>' +
             '<em>' + Math.round(d.max) + '°</em><small>' + Math.round(d.min) + '°</small>' +
-            (d.pop ? '<small class="fc-p">💧' + Math.round(d.pop) + '%</small>' : '<small class="fc-p"></small>') + '</div>';
+            (d.pop ? '<small class="fc-p">' + Icons.ic('drop') + Math.round(d.pop) + '%</small>' : '<small class="fc-p"></small>') + '</div>';
         }
       } else {
         var hrs = w.hours || [], nh = Math.min(hrs.length, def.w >= 12 ? 14 : def.w >= 8 ? 10 : 7);
@@ -387,8 +385,8 @@
         for (i = 0; i < nh; i++) {
           var h = hrs[i];
           cols += '<div class="fc"><b>' + (i === 0 ? 'Şimdi' : String(h.time).slice(11, 13)) + '</b><span class="fc-i">' +
-            (h.code === 0 && !h.isDay ? '🌙' : wxIcon(h.code)) + '</span><em>' + Math.round(h.temp) + '°</em>' +
-            (h.pop ? '<small class="fc-p">💧' + Math.round(h.pop) + '%</small>' : '<small class="fc-p"></small>') + '</div>';
+            wxIcon(h.code, !h.isDay) + '</span><em>' + Math.round(h.temp) + '°</em>' +
+            (h.pop ? '<small class="fc-p">' + Icons.ic('drop') + Math.round(h.pop) + '%</small>' : '<small class="fc-p"></small>') + '</div>';
         }
       }
       el.innerHTML = '<div class="title">' + (daily ? '7 günlük tahmin' : 'Saatlik tahmin') + ' · ' + esc(w.city) + '</div><div class="fc-row">' + cols + '</div>';
@@ -417,7 +415,7 @@
       var moonTxt = mn.illum >= 0.97 ? 'Dolunay' : mn.illum <= 0.03 ? 'Yeni ay' : '%' + Math.round(mn.illum * 100) + ' aydınlık';
       var nextFull = Math.round(mn.daysToFull), nextTxt = nextFull <= 0 ? 'Dolunay bugün' : 'Dolunaya ' + nextFull + ' gün';
       el.innerHTML = '<div class="title">Güneş ve Ay · ' + esc(w.city) + '</div><div class="sky">' +
-        '<div class="sky-sun">' + arc + '<div class="sky-times"><span>🌅 ' + rise + '</span><span>🌇 ' + set + '</span></div>' +
+        '<div class="sky-sun">' + arc + '<div class="sky-times"><span>' + Icons.ic('sunrise') + ' ' + rise + '</span><span>' + Icons.ic('sunset') + ' ' + set + '</span></div>' +
         '<div class="sky-st">' + status + '</div></div>' +
         '<div class="sky-moon"><div class="sky-mi">' + mn.icon + '</div><div class="sky-mn">' + mn.name + '</div><div class="sky-ms">' + moonTxt + '</div>' +
         (big ? '<div class="sky-ms">' + nextTxt + '</div>' : '') + '</div>' +
@@ -571,6 +569,16 @@
     }
   };
 
+  // Claude Code'un İngilizce bildirim metinlerini Türkçeleştir
+  function trMsg(m) {
+    m = String(m || '');
+    var r;
+    if ((r = /^(?:Claude|Codex|Antigravity) needs your permission to use (.+?)\.?$/i.exec(m))) return r[1] + ' için izin bekliyor';
+    if (/^(?:Claude|Codex|Antigravity) is waiting for your input\.?$/i.test(m)) return 'Yanıtını bekliyor';
+    if (/^(?:Claude|Codex|Antigravity) needs your attention\.?$/i.test(m)) return 'Senden bir şey bekliyor';
+    return m;
+  }
+
   widgets.sessions = {
     deps: ['sessions'], tick: true,
     render: function (el) {
@@ -582,7 +590,7 @@
       for (var i = 0; i < list.length; i++) {
         var x = list[i]; counts[x.state]++;
         // alt satir: bekliyorsa ne istedigi, calisiyorsa hangi arac, yoksa oturumun ilk istemi
-        var sub = x.state === 'waiting' && x.message ? x.message : (x.state === 'working' && x.tool ? 'şu an: ' + x.tool : x.title || '');
+        var sub = x.state === 'waiting' && x.message ? trMsg(x.message) : (x.state === 'working' && x.tool ? 'şu an: ' + x.tool : x.title || '');
         var secs = Math.max(0, (Date.now() - x.since) / 1000);
         rows += '<div class="s-row ' + x.state + '"><span class="s-dot"></span><span class="s-ag ag-' + esc(x.agent) + '">' + esc(x.agent) + '</span>' +
           '<span class="s-name">' + esc(x.project || '?') + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span>' +
@@ -619,14 +627,14 @@
         var disks = '';
         for (var i = 0; i < h.disks.length; i++) {
           var d = h.disks[i], p = d.total ? d.used / d.total * 100 : 0;
-          disks += '<div class="md"><div class="mdl"><span>' + (d.usb ? '<i class="usb" title="harici disk">🔌</i> ' : '') + esc(d.name) + '</span><span>' + Math.round(p) + '% · ' + fmtBytes(d.total) + '</span></div>' +
+          disks += '<div class="md"><div class="mdl"><span>' + (d.usb ? '<i class="usb" title="harici disk">' + Icons.ic('plug') + '</i> ' : '') + esc(d.name) + '</span><span>' + Math.round(p) + '% · ' + fmtBytes(d.total) + '</span></div>' +
             '<div class="mbar"><div style="width:' + p.toFixed(1) + '%;background:' + colorFor(p) + '"></div></div></div>';
         }
         // pil (varsa)
         var bat = '';
         if (h.battery) {
           var bp = h.battery.pct, low = bp <= 20 && !h.battery.plugged;
-          bat = '<span class="m-bat' + (low ? ' low' : '') + '">' + (h.battery.charging ? '⚡' : h.battery.plugged ? '🔌' : '🔋') + ' ' + Math.round(bp) + '%</span>';
+          bat = '<span class="m-bat' + (low ? ' low' : '') + '">' + Icons.ic(h.battery.charging ? 'bolt' : h.battery.plugged ? 'plug' : 'battery') + ' ' + Math.round(bp) + '%</span>';
         }
         // halkalar: CPU, RAM ve (varsa) GPU
         var g = h.gpus && h.gpus.length ? h.gpus[0] : null, rings =
@@ -916,7 +924,7 @@
       var set = WORLD_SETS[opts && opts.set] || WORLD_SETS.dunya, now = new Date(), home = zoneParts('Europe/Istanbul', now), rows = '';
       set.forEach(function (c) {
         var z = zoneParts(c[1], now), rel = z.day === home.day ? '' : z.day > home.day ? 'yarın' : 'dün', night = z.h < 6 || z.h >= 20;
-        rows += '<div class="wz"><span class="wz-i">' + (night ? '🌙' : '☀️') + '</span><span class="wz-c">' + esc(c[0]) + (rel ? '<small>' + rel + '</small>' : '') + '</span><span class="wz-t">' + pad(z.h) + ':' + pad(z.m) + '</span></div>';
+        rows += '<div class="wz"><span class="wz-i">' + Icons.ic(night ? 'moon' : 'sun') + '</span><span class="wz-c">' + esc(c[0]) + (rel ? '<small>' + rel + '</small>' : '') + '</span><span class="wz-t">' + pad(z.h) + ':' + pad(z.m) + '</span></div>';
       });
       el.innerHTML = '<div class="title">Dünya saatleri</div><div class="wzs">' + rows + '</div>';
     }
@@ -954,7 +962,7 @@
     tick: true,
     render: function (el, opts, def) {
       var types = [opts.a, opts.b, opts.c, opts.d].filter(function (t, i, a) { return t && t !== 'none' && widgets[t] && STACK_TYPES.indexOf(t) >= 0 && a.indexOf(t) === i; });
-      if (!types.length) { el.innerHTML = '<div class="title">Akıllı yığın</div><div class="hint">⚙ Ayar’dan en az bir widget seç.</div>'; el._sig = ''; return; }
+      if (!types.length) { el.innerHTML = '<div class="title">Akıllı yığın</div><div class="hint">' + Icons.ic('sliders') + ' Ayar’dan en az bir widget seç.</div>'; el._sig = ''; return; }
       var sig = types.join(',');
       if (el._sig !== sig) {
         el._sig = sig; el._off = 0; el._slots = {};
@@ -1301,7 +1309,7 @@
         var on = s[1] === d.w && s[2] === d.h;
         html += '<button class="sz' + (on ? ' on' : '') + '" data-act="size" data-w="' + s[1] + '" data-h="' + s[2] + '">' + s[0] + '<small>' + s[1] + '×' + s[2] + '</small></button>';
       });
-      if (cat.opts) html += '<button data-act="opts">⚙ Ayar</button>';
+      if (cat.opts) html += '<button data-act="opts">' + Icons.ic('sliders') + ' Ayar</button>';
       html += '<button class="danger" data-act="rmsel">Kaldır</button><button class="pri" data-act="desel">Tamam</button>';
     }
     editbarEl.innerHTML = html;
@@ -1381,7 +1389,7 @@
     CAT_ORDER.forEach(function (cat) {
       var items = '';
       Object.keys(CATALOG).forEach(function (t) {
-        if (CATALOG[t].cat === cat) items += '<button class="gi" data-add="' + t + '"><span>' + CATALOG[t].icon + '</span>' + esc(CATALOG[t].name) + '</button>';
+        if (CATALOG[t].cat === cat) items += '<button class="gi" data-add="' + t + '"><span>' + Icons.ic(CATALOG[t].icon) + '</span>' + esc(CATALOG[t].name) + '</button>';
       });
       if (items) html += '<div class="gc">' + cat + '</div><div class="gg">' + items + '</div>';
     });
@@ -1601,6 +1609,28 @@
     });
     es.onerror = function () { setStatus(false, 'bağlantı yok'); markOffline(); };
   }
+
+  // ---------- gece kısma ----------
+  // Sunucudaki DIM="23:00-07:00" aralığında ekran kararır; dokununca 45 sn uyanır.
+  var dimCfg = { from: '23:00', to: '07:00', level: 0.35 }, dimEl = document.getElementById('dim'), dimWake = 0;
+  function toMin(t) { var p = String(t).split(':'); return (+p[0]) * 60 + (+p[1]); }
+  function dimInRange(c, d) {
+    var now = d.getHours() * 60 + d.getMinutes(), a = toMin(c.from), b = toMin(c.to);
+    return a === b ? false : a < b ? (now >= a && now < b) : (now >= a || now < b);
+  }
+  function dimApply() {
+    if (!dimEl) return;
+    var on = dimCfg && !/[?&]nodim\b/.test(location.search) && Date.now() > dimWake && dimInRange(dimCfg, new Date());
+    dimEl.style.opacity = on ? String(+(1 - dimCfg.level).toFixed(2)) : '0';
+  }
+  document.addEventListener('pointerdown', function () {
+    if (dimCfg && dimEl && dimEl.style.opacity !== '0') { dimWake = Date.now() + 45000; dimApply(); setTimeout(dimApply, 45500); }
+  }, true);
+  fetch(api('/api/ui')).then(function (r) { return r.ok ? r.json() : {}; }).then(function (u) {
+    if (u && 'dim' in u) dimCfg = u.dim;
+    dimApply();
+  }).catch(function () { dimApply(); });
+  setInterval(dimApply, 30000);
 
   loadLayout().then(function () {
     build(); resetIdle(); connect();

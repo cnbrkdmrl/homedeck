@@ -25,6 +25,7 @@ Demo modunda alındı (örnek veri, gerçek hesap yok). Varsayılan düzende on 
 - **Makineler:** her makinede çalışan küçük agent CPU, RAM, diskler, ağ, sıcaklık, (varsa) GPU ve pil bilgisini gönderir (macOS / Linux / Windows).
 - **Servis kontrolü:** listelediğin adreslerin / TCP portlarının ayakta olup olmadığı ve yanıt süresi (`SERVICES`), gecikme grafiğiyle.
 - **Çalan şarkı:** macOS'ta Apple Music ve Spotify için şarkı bilgisi ve ⏮ ⏯ ⏭ düğmeleri (agent'ta opt-in).
+- **Gece kısma:** ekran zamanlanmış kararır, dokununca uyanır; vektör ikonlar, büyük sayfa göstergesi.
 - **Sağlık özeti:** yük, disk, bellek, sıcaklık, konteyner ve makine durumu tek bakışta.
 - **Docker** konteyner listesi (salt okunur socket proxy), **sistem** metrikleri, **modem** trafik sayacı (UPnP/IGD).
 - **Hava, güneş/ay, hava kalitesi** (Open-Meteo, anahtarsız); **takvim** ve **akıllı ev cihazları** Home Assistant üzerinden (salt okunur).
@@ -84,6 +85,10 @@ Değerler `id`'ye göre tutulur; bildirimler `ttl` dakika sonra düşer (varsay�
 ## Çalan şarkı (macOS: Apple Music / Spotify)
 
 "Müzik" sayfası şarkıyı gösterir ve ⏮ ⏯ ⏭ düğmeleriyle uygulamayı kontrol eder. macOS agent'ı Müzik ve Spotify masaüstünü AppleScript ile okur; hesap ya da anahtar gerekmez. Açmak için `~/.homedeck-agent/agent.config.json` dosyasına `"media": true` ekleyip agent'ı yeniden başlat; macOS ilk seferde Otomasyon izni sorar. Agent kapalı bir müzik uygulamasını açmaz. Telefon uygulamaları, YouTube Music ve tarayıcı oynatıcıları desteklenmez.
+
+## Gece kısma
+
+Varsayılan olarak 23:00–07:00 arası ekran kararır (parlaklık 0,35); dokununca 45 sn uyanır. Başka aralık için `DIM=22:30-06:30`, kapatmak için `DIM=off`, parlaklık için `DIM_LEVEL=0.2` (0,1–1). Adrese `?nodim` eklersen o sekmede kısma kapanır.
 
 ## Yerleşim editörü
 

@@ -1,4 +1,4 @@
-// GECICI: AI kotalari ve AI oturumlari icin simule veri. Faz 3'te Kota + Claude Code hook'lari ile degisecek.
+// GEÇİCİ: AI kotaları ve AI oturumları için simüle veri. Faz 3'te Kota + Claude Code hook'lari ile degisecek.
 const t0 = Date.now();
 
 // DEMO_QUOTAS=1: yeni (gercek) kota bicimiyle ornek veri: taze Claude, yasli Antigravity, bayat Codex (pencereleri sifirlanmis)
@@ -29,10 +29,10 @@ function sessions() {
   const mk = (project, agent, state, minAgo, extra) => ({ project, agent, state, host: 'laptop', title: '', tool: '', message: '', since: now - minAgo * 60000, ...extra });
   return {
     sessions: [
-      mk('homedeck', 'claude', 'working', 12, { tool: 'Edit', title: 'kancalari yaz' }),
-      mk('demo-app', 'claude', 'working', 34, { host: 'desktop', tool: 'Bash', title: 'ornek gorev' }),
-      mk('demo-app', 'claude', 'waiting', 95, { message: 'Claude needs your permission to use Bash', title: 'ornek gorev 2' }),
-      mk('blog-site', 'claude', 'idle', 180, { title: 'yazi taslagi' }),
+      mk('homedeck', 'claude', 'working', 12, { tool: 'Edit', title: 'kancaları yaz' }),
+      mk('demo-app', 'claude', 'working', 34, { host: 'desktop', tool: 'Bash', title: 'örnek görev' }),
+      mk('demo-app', 'claude', 'waiting', 95, { message: 'Claude needs your permission to use Bash', title: 'örnek görev 2' }),
+      mk('blog-site', 'claude', 'idle', 180, { title: 'yazı taslağı' }),
       mk('demo-lib', 'codex', 'idle', 260, { host: 'server' }),
     ],
   };

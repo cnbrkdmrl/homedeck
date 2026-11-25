@@ -25,6 +25,7 @@ Captured in demo mode (sample data, no real accounts). The default layout has te
 - **Machines**: a tiny agent (single file, Node 18.15+; macOS / Linux / Windows) reports CPU, RAM, disks, network, temperature, optional GPU and battery.
 - **Service checks**: up/down and response time for any URLs or TCP ports you list (`SERVICES`), with a latency sparkline.
 - **Now playing**: track info and ⏮ ⏯ ⏭ controls for Apple Music and Spotify on macOS (opt-in agent feature).
+- **Night dimming**: the screen dims on a schedule and wakes on touch; vector icons, large page indicator.
 - **Health summary**: one glance at load, disk, memory, temperature, containers and machines (warns before things break).
 - **Docker** container list through a read-only socket proxy, **system** metrics, **modem** traffic counter (UPnP/IGD).
 - **Weather, sun & moon, air quality** (Open-Meteo, no key), **calendar** and **smart-home devices** via Home Assistant (read-only).
@@ -120,6 +121,10 @@ The "Müzik" page (or `＋ Widget` → Now playing) shows the current track and 
 - The agent never launches a music app; it only talks to one that is already running.
 - Button presses go screen → hub (`POST /api/media/command`, viewer addresses only) → agent (next request, ≤ ~3 s).
 - Album art appears for Spotify only. Phone apps, YouTube Music and browser players are not supported.
+
+## Night dimming
+
+By default the screen dims between 23:00 and 07:00 (brightness 0.35); a tap wakes it for 45 s. Set `DIM=22:30-06:30` for another window, `DIM=off` to disable, `DIM_LEVEL=0.2` (0.1–1) for the brightness. Add `?nodim` to the URL to disable dimming in that tab.
 
 ## Layout editor
 

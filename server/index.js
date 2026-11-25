@@ -16,6 +16,18 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(ROOT, 'public');
 const LAYOUT = process.env.LAYOUT_FILE || path.join(ROOT, 'config', 'layout.json');
 const PORT = Number(process.env.PORT || 8787);
+
+// Gece kısma: DIM="23:00-07:00" (varsayılan), DIM=off kapatır; DIM_LEVEL=0.35 (0.1-1 parlaklık)
+function parseDim(spec, level) {
+  const s = String(spec == null ? '23:00-07:00' : spec).trim().toLowerCase();
+  if (!s || s === 'off' || s === '0' || s === 'false') return null;
+  const m = /^(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})$/.exec(s);
+  if (!m) return null;
+  const hm = (h, mi) => String(Math.min(23, +h)).padStart(2, '0') + ':' + String(Math.min(59, +mi)).padStart(2, '0');
+  const lv = Number(level);
+  return { from: hm(m[1], m[2]), to: hm(m[3], m[4]), level: Math.min(1, Math.max(0.1, Number.isFinite(lv) && level !== '' && level != null ? lv : 0.35)) };
+}
+const uiConfig = { dim: parseDim(process.env.DIM, process.env.DIM_LEVEL) };
 const TOKEN = process.env.ACCESS_TOKEN || ''; // bos ise auth yok (sadece LAN/Tailscale'de kullan)
 
 const MIME = {
@@ -391,6 +403,11 @@ const server = http.createServer((req, res) => {
     if (url.pathname === '/api/health') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ ok: true, uptime: process.uptime(), clients: clients.size }));
+      return;
+    }
+    if (url.pathname === '/api/ui') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(uiConfig));
       return;
     }
     if (url.pathname === '/api/media/command' && req.method === 'POST') {
